@@ -46,6 +46,7 @@ interface TransparencyContextType {
   atmosphereWindEnabled: boolean; // 风力效果开关
   darkOverlayEnabled: boolean; // 黑色遮罩开关
   darkOverlayMode: 'off' | 'always' | 'smart'; // 黑色遮罩模式：关闭/始终/智能
+  isSlowMotion: boolean; // 粒子慢放状态（鼠标按住空白区域时激活）
   darkMode: boolean; // 夜间模式开关（计算属性）
   darkModePreference: 'system' | 'on' | 'off' | 'scheduled'; // 夜间模式偏好
   darkModeScheduleStart: string; // 定时开始时间 HH:mm
@@ -84,6 +85,7 @@ interface TransparencyContextType {
   setDarkModePreference: (preference: 'system' | 'on' | 'off' | 'scheduled') => void;
   setDarkModeScheduleStart: (time: string) => void;
   setDarkModeScheduleEnd: (time: string) => void;
+  setIsSlowMotion: (value: boolean) => void;
 }
 
 const TransparencyContext = createContext<TransparencyContextType | undefined>(undefined);
@@ -271,6 +273,10 @@ export function TransparencyProvider({ children }: { children: ReactNode }) {
     const saved = localStorage.getItem('darkOverlayMode') as 'off' | 'always' | 'smart';
     return saved || 'smart'; // 默认智能模式
   });
+
+  // 粒子慢放状态（鼠标按住空白区域时激活，不需要持久化）
+  const [isSlowMotion, setIsSlowMotion] = useState(false);
+
   // 夜间模式偏好设置
   const [darkModePreference, setDarkModePreference] = useState<'system' | 'on' | 'off' | 'scheduled'>(() => {
     const saved = localStorage.getItem('darkModePreference') as 'system' | 'on' | 'off' | 'scheduled';
@@ -534,6 +540,7 @@ export function TransparencyProvider({ children }: { children: ReactNode }) {
     darkModePreference,
     darkModeScheduleStart,
     darkModeScheduleEnd,
+    isSlowMotion,
     setCardOpacity,
     setSearchBarOpacity,
     setParallaxEnabled,
@@ -568,10 +575,11 @@ export function TransparencyProvider({ children }: { children: ReactNode }) {
     setDarkModePreference,
     setDarkModeScheduleStart,
     setDarkModeScheduleEnd,
+    setIsSlowMotion,
   }), [
     cardOpacity, searchBarOpacity, parallaxEnabled, wallpaperResolution, isSettingsOpen, isSearchFocused, cardColor, searchBarColor,
     autoSyncEnabled, autoSyncInterval, searchInNewTab, autoSortEnabled, timeComponentEnabled, showFullDate, showSeconds, showWeekday,
-    showYear, showMonth, showDay, dateDisplayMode, searchBarBorderRadius, animationStyle, workCountdownEnabled, lunchTime, offWorkTime, aiIconDisplayMode, atmosphereMode, atmosphereParticleCount, atmosphereWindEnabled, darkOverlayEnabled, darkOverlayMode, darkMode, darkModePreference, darkModeScheduleStart, darkModeScheduleEnd
+    showYear, showMonth, showDay, dateDisplayMode, searchBarBorderRadius, animationStyle, workCountdownEnabled, lunchTime, offWorkTime, aiIconDisplayMode, atmosphereMode, atmosphereParticleCount, atmosphereWindEnabled, darkOverlayEnabled, darkOverlayMode, darkMode, darkModePreference, darkModeScheduleStart, darkModeScheduleEnd, isSlowMotion
   ]);
 
   return (

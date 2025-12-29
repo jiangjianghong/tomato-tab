@@ -25,6 +25,7 @@ interface Leaf {
 interface LeafEffectProps {
     particleCount?: number;
     windEnabled?: boolean; // 风力开关
+    isSlowMotion?: boolean; // 慢放效果
 }
 
 // 内置 SVG 尖叶子（统一形状，不同颜色）
@@ -43,13 +44,15 @@ const LEAF_SVGS = [
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 50"><path fill="#F39C12" stroke="#D68910" stroke-width="0.5" d="M15 2 Q26 17 21 32 Q17 44 15 48 Q13 44 9 32 Q4 17 15 2 Z"/><line x1="15" y1="8" x2="15" y2="45" stroke="#D68910" stroke-width="0.6"/></svg>`,
 ];
 
-export default function LeafEffect({ particleCount = 100, windEnabled = true }: LeafEffectProps) {
+export default function LeafEffect({ particleCount = 100, windEnabled = true, isSlowMotion = false }: LeafEffectProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const sceneRef = useRef<HTMLDivElement>(null);
     const nearSceneRef = useRef<HTMLDivElement>(null); // 近景层
     const leavesRef = useRef<Leaf[]>([]);
     const timerRef = useRef(0);
     const animationRef = useRef<number | null>(null);
+    const isSlowMotionRef = useRef(isSlowMotion); // 使用 ref 存储最新值
+    const currentMotionFactorRef = useRef(1); // 当前运动系数，用于平滑过渡
     const windRef = useRef({
         magnitude: 1.2,
         maxSpeed: 12,
@@ -57,6 +60,9 @@ export default function LeafEffect({ particleCount = 100, windEnabled = true }: 
         start: 0,
         speed: (_t: number, _y: number): number => 0,
     });
+
+    // 同步 isSlowMotion prop 到 ref
+    isSlowMotionRef.current = isSlowMotion;
 
     const numLeaves = Math.min(Math.max(particleCount, 10), 100); // 叶子数量由粒子数控制，范围 10-100
 
@@ -118,16 +124,23 @@ export default function LeafEffect({ particleCount = 100, windEnabled = true }: 
     }, []);
 
     // 更新单个叶子
+    const SLOW_MOTION_FACTOR = 0.1; // 慢放时速度降为原来的 10%
+    const TRANSITION_SPEED = 0.05; // 过渡速度
     const updateLeaf = useCallback((leaf: Leaf, width: number, height: number) => {
         const wind = windRef.current;
         const timer = timerRef.current;
 
-        const leafWindSpeed = windEnabled ? wind.speed(timer - wind.start, leaf.y) : 0;
-        const xSpeed = leafWindSpeed + leaf.xSpeedVariation;
+        // 平滑过渡：每帧让运动系数逐渐靠近目标值
+        const targetFactor = isSlowMotionRef.current ? SLOW_MOTION_FACTOR : 1;
+        currentMotionFactorRef.current += (targetFactor - currentMotionFactorRef.current) * TRANSITION_SPEED;
+        const motionFactor = currentMotionFactorRef.current;
+
+        const leafWindSpeed = windEnabled ? wind.speed(timer - wind.start, leaf.y) * motionFactor : 0;
+        const xSpeed = leafWindSpeed + leaf.xSpeedVariation * motionFactor;
 
         leaf.x -= xSpeed;
-        leaf.y += leaf.ySpeed;
-        leaf.rotation.value += leaf.rotation.speed;
+        leaf.y += leaf.ySpeed * motionFactor;
+        leaf.rotation.value += leaf.rotation.speed * motionFactor;
 
         // 构建 3D 变换
         let transform = `translateX(${leaf.x}px) translateY(${leaf.y}px) translateZ(${leaf.z}px) rotate${leaf.rotation.axis}(${leaf.rotation.value}deg)`;
@@ -141,7 +154,7 @@ export default function LeafEffect({ particleCount = 100, windEnabled = true }: 
         if (leaf.x < -10 || leaf.y > height + 10) {
             resetLeaf(leaf, width, height);
         }
-    }, [resetLeaf]);
+    }, [resetLeaf, windEnabled]);
 
     // 初始化
     useEffect(() => {

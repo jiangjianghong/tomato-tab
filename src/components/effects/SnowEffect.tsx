@@ -21,13 +21,16 @@ interface Snowflake {
 interface SnowEffectProps {
     particleCount?: number;
     windEnabled?: boolean; // 风力开关
+    isSlowMotion?: boolean; // 慢放效果
 }
 
 // 性能配置
 const SPAWN_RATE = 0.5;
 const SIZE_THRESHOLD = 2.2;
+const SLOW_MOTION_FACTOR = 0.1; // 慢放时速度降为原来的 10%
+const TRANSITION_SPEED = 0.05; // 过渡速度，每帧向目标值靠近 5%
 
-export default function SnowEffect({ particleCount = 100, windEnabled = true }: SnowEffectProps) {
+export default function SnowEffect({ particleCount = 100, windEnabled = true, isSlowMotion = false }: SnowEffectProps) {
     const maxSnowflakes = particleCount;
     const farCanvasRef = useRef<HTMLCanvasElement>(null);
     const nearCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -35,6 +38,11 @@ export default function SnowEffect({ particleCount = 100, windEnabled = true }: 
     const animationFrameRef = useRef<number | null>(null);
     const lastTimeRef = useRef<number>(0);
     const timerRef = useRef(0);
+    const isSlowMotionRef = useRef(isSlowMotion); // 使用 ref 存储最新值
+    const currentMotionFactorRef = useRef(1); // 当前运动系数，用于平滑过渡
+
+    // 同步 isSlowMotion prop 到 ref
+    isSlowMotionRef.current = isSlowMotion;
 
     // 风力系统
     const windRef = useRef({
@@ -113,18 +121,24 @@ export default function SnowEffect({ particleCount = 100, windEnabled = true }: 
         farCtx.clearRect(0, 0, width, height);
         nearCtx.clearRect(0, 0, width, height);
 
-        // 可能生成新雪花
-        if (snowflakesRef.current.length < maxSnowflakes && Math.random() < SPAWN_RATE) {
+        // 可能生成新雪花（使用当前运动系数控制生成速度）
+        const currentSpawnRate = SPAWN_RATE * currentMotionFactorRef.current;
+        if (snowflakesRef.current.length < maxSnowflakes && Math.random() < currentSpawnRate) {
             snowflakesRef.current.push(createSnowflake(width));
         }
 
+        // 平滑过渡：每帧让运动系数逐渐靠近目标值
+        const targetFactor = isSlowMotionRef.current ? SLOW_MOTION_FACTOR : 1;
+        currentMotionFactorRef.current += (targetFactor - currentMotionFactorRef.current) * TRANSITION_SPEED;
+
         // 更新雪花位置并过滤
+        const motionFactor = currentMotionFactorRef.current;
         snowflakesRef.current = snowflakesRef.current.filter((flake) => {
             // 计算风力影响
-            const windSpeed = windEnabled ? wind.speed(timer - wind.start, flake.y) * 0.5 : 0;
+            const windSpeed = windEnabled ? wind.speed(timer - wind.start, flake.y) * 0.5 * motionFactor : 0;
             flake.x -= windSpeed;
-            flake.y += flake.speed;
-            flake.swingOffset += flake.swingSpeed;
+            flake.y += flake.speed * motionFactor;
+            flake.swingOffset += flake.swingSpeed * motionFactor;
 
             // 超出左右边界时重新出现在另一侧
             if (flake.x < -10) flake.x = width + 10;

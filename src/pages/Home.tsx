@@ -47,6 +47,8 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
     atmosphereParticleCount,
     atmosphereWindEnabled,
     darkOverlayMode,
+    isSlowMotion,
+    setIsSlowMotion,
   } = useTransparency();
   const { isWorkspaceOpen, setIsWorkspaceOpen } = useWorkspace();
   const { isMobile, getGridClasses, getSearchBarLayout } = useResponsiveLayout();
@@ -91,6 +93,45 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
       document.removeEventListener('contextmenu', handleContextMenu);
     };
   }, []);
+
+  // 鼠标按住空白区域时触发粒子慢放效果
+  useEffect(() => {
+    const handleMouseDown = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      // 检查是否点击在交互元素上（卡片、按钮、输入框、链接等）
+      const isInteractiveElement =
+        target.closest('[data-website-card]') ||
+        target.closest('button') ||
+        target.closest('input') ||
+        target.closest('textarea') ||
+        target.closest('a') ||
+        target.closest('[role="button"]') ||
+        target.closest('[data-interactive]');
+
+      // 只有点击在空白区域时才触发慢放
+      if (!isInteractiveElement) {
+        setIsSlowMotion(true);
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsSlowMotion(false);
+    };
+
+    const handleMouseLeave = () => {
+      setIsSlowMotion(false);
+    };
+
+    document.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener('mouseleave', handleMouseLeave);
+
+    return () => {
+      document.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('mouseleave', handleMouseLeave);
+    };
+  }, [setIsSlowMotion]);
 
   // 检查当前壁纸是否已收藏
   useEffect(() => {
@@ -476,12 +517,12 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
 
       {/* 雪花氛围效果 */}
       {(atmosphereMode === 'snow' || (atmosphereMode === 'auto' && isWinterSeason())) && (
-        <SnowEffect particleCount={atmosphereParticleCount} windEnabled={atmosphereWindEnabled} />
+        <SnowEffect particleCount={atmosphereParticleCount} windEnabled={atmosphereWindEnabled} isSlowMotion={isSlowMotion} />
       )}
 
       {/* 落叶氛围效果 */}
       {(atmosphereMode === 'leaf' || (atmosphereMode === 'auto' && isAutumnSeason())) && (
-        <LeafEffect particleCount={atmosphereParticleCount} windEnabled={atmosphereWindEnabled} />
+        <LeafEffect particleCount={atmosphereParticleCount} windEnabled={atmosphereWindEnabled} isSlowMotion={isSlowMotion} />
       )}
 
 
