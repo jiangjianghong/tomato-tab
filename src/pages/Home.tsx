@@ -515,14 +515,14 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
         />
       )}
 
-      {/* 雪花氛围效果 */}
+      {/* 雪花氛围效果 - 粒子数 = 档位 * 6 */}
       {(atmosphereMode === 'snow' || (atmosphereMode === 'auto' && isWinterSeason())) && (
-        <SnowEffect particleCount={atmosphereParticleCount} windEnabled={atmosphereWindEnabled} isSlowMotion={isSlowMotion} />
+        <SnowEffect particleCount={atmosphereParticleCount * 6} windEnabled={atmosphereWindEnabled} isSlowMotion={isSlowMotion} />
       )}
 
-      {/* 落叶氛围效果 */}
+      {/* 落叶氛围效果 - 粒子数 = 档位 * 4 */}
       {(atmosphereMode === 'leaf' || (atmosphereMode === 'auto' && isAutumnSeason())) && (
-        <LeafEffect particleCount={atmosphereParticleCount} windEnabled={atmosphereWindEnabled} isSlowMotion={isSlowMotion} />
+        <LeafEffect particleCount={atmosphereParticleCount * 4} windEnabled={atmosphereWindEnabled} isSlowMotion={isSlowMotion} />
       )}
 
 

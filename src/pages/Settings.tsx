@@ -1717,7 +1717,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                           <p className="text-xs text-gray-400 mt-0.5 select-none">过多的粒子会消耗更多性能哦</p>
                         </div>
                         <span className="text-sm font-medium text-indigo-600">
-                          {atmosphereParticleCount}
+                          {Math.round(atmosphereParticleCount / 2)}
                         </span>
                       </div>
                       <input
@@ -1725,8 +1725,8 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                         min="1"
                         max="100"
                         step="1"
-                        value={atmosphereParticleCount}
-                        onChange={(e) => setAtmosphereParticleCount(parseInt(e.target.value, 10))}
+                        value={Math.round(atmosphereParticleCount / 2)}
+                        onChange={(e) => setAtmosphereParticleCount(parseInt(e.target.value, 10) * 2)}
                         className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer"
                       />
                       <div className="flex justify-between text-xs text-gray-400">
