@@ -121,15 +121,15 @@ export function TransparencyProvider({ children }: { children: ReactNode }) {
     return saved || '255, 255, 255'; // 默认白色
   });
 
-  // 获取默认壁纸分辨率（根据设备屏幕判断）
+  // 获取默认壁纸分辨率（根据宽高比判断）
   const getDefaultResolution = (): WallpaperResolution => {
-    // 检查是否为竖屏设备
-    const isPortrait = window.innerHeight > window.innerWidth;
-    if (isPortrait) {
+    // 使用宽高比判断：ratio < 1 表示竖屏，使用mobile壁纸；ratio >= 1 表示横屏，使用1080p壁纸
+    const aspectRatio = window.innerWidth / window.innerHeight;
+    if (aspectRatio < 1) {
       return 'mobile';
     }
 
-    // 对于宽屏设备，默认使用1080p
+    // 横屏设备，默认使用1080p
     return '1080p';
   };
 
