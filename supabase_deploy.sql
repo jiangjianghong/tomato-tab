@@ -422,11 +422,26 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE TABLE IF NOT EXISTS user_notion_tokens (
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
   access_token TEXT NOT NULL,  -- OAuth access token
+  refresh_token TEXT,          -- OAuth refresh token (用于刷新 access_token)
+  expires_at TIMESTAMP WITH TIME ZONE,  -- access_token 过期时间
   workspace_id TEXT,           -- Notion workspace ID
   workspace_name TEXT,         -- Notion workspace name
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- 添加 refresh_token 和 expires_at 字段（如果表已存在）
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_name = 'user_notion_tokens' AND column_name = 'refresh_token') THEN
+    ALTER TABLE user_notion_tokens ADD COLUMN refresh_token TEXT;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_name = 'user_notion_tokens' AND column_name = 'expires_at') THEN
+    ALTER TABLE user_notion_tokens ADD COLUMN expires_at TIMESTAMP WITH TIME ZONE;
+  END IF;
+END $$;
 
 ALTER TABLE user_notion_tokens ENABLE ROW LEVEL SECURITY;
 

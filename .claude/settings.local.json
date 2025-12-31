@@ -29,7 +29,8 @@
       "WebFetch(domain:wxheqargopbsrruootyr.supabase.co)",
       "Bash(supabase --version:*)",
       "Bash(supabase functions deploy:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "WebFetch(domain:developers.notion.com)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

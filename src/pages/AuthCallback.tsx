@@ -19,6 +19,7 @@ async function saveNotionTokenIfExists(session: any) {
         }
 
         console.log('🔐 检测到 Notion OAuth token，正在保存到数据库...');
+        console.log('📝 provider_refresh_token 存在:', !!session.provider_refresh_token);
 
         // 尝试获取 Notion workspace 信息（通过 /users/me API）
         let workspaceId = '';
@@ -47,12 +48,21 @@ async function saveNotionTokenIfExists(session: any) {
             console.warn('获取 Notion workspace 信息失败（非关键错误）:', error);
         }
 
+        // 计算 token 过期时间（Notion token 通常1小时过期，但我们设置保守的30天检查周期）
+        // 如果有 expires_in 信息则使用，否则默认30天
+        const expiresAt = session.expires_in
+            ? new Date(Date.now() + session.expires_in * 1000).toISOString()
+            : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(); // 30天
+
         // 使用 upsert 保存 token（如果已存在则更新）
+        // 同时保存 refresh_token 用于后续刷新
         const { error } = await supabase
             .from('user_notion_tokens')
             .upsert({
                 user_id: session.user.id,
                 access_token: session.provider_token,
+                refresh_token: session.provider_refresh_token || null,
+                expires_at: expiresAt,
                 workspace_id: workspaceId || null,
                 workspace_name: workspaceName || null,
                 updated_at: new Date().toISOString(),
@@ -64,6 +74,9 @@ async function saveNotionTokenIfExists(session: any) {
             console.error('❌ 保存 Notion token 失败:', error);
         } else {
             console.log('✅ Notion OAuth token 已保存到数据库');
+            if (session.provider_refresh_token) {
+                console.log('✅ Refresh token 也已保存，支持自动刷新');
+            }
         }
     } catch (error) {
         console.error('保存 Notion token 时出错:', error);

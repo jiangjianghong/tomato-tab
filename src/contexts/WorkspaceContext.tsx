@@ -306,7 +306,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     if (config.mode === 'oauth') {
       const hasOAuth = await hasNotionAuth();
       if (!hasOAuth) {
-        setError('Notion OAuth 已过期，请重新授权');
+        console.log('⚠️ syncWorkspaceData: hasNotionAuth 返回 false');
+        setError('Notion 授权已失效，请在设置中重新绑定 Notion 账号');
         return;
       }
       // 确保 OAuth 客户端已配置
@@ -323,7 +324,13 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       console.log('✅ 工作空间数据同步成功');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '同步失败';
-      setError(errorMessage);
+
+      // 检查是否是认证错误
+      if (errorMessage.includes('401') || errorMessage.includes('无效') || errorMessage.includes('过期')) {
+        setError('Notion 授权已失效，请在设置中重新绑定 Notion 账号');
+      } else {
+        setError(errorMessage);
+      }
       console.error('❌ 工作空间数据同步失败:', errorMessage);
 
       // 尝试使用缓存数据
@@ -350,7 +357,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       if (config.mode === 'oauth') {
         const hasOAuth = await hasNotionAuth();
         if (!hasOAuth) {
-          setError('Notion OAuth 已过期，请重新授权');
+          console.log('⚠️ testConnection: hasNotionAuth 返回 false');
+          setError('Notion 授权已失效，请在设置中重新绑定 Notion 账号');
           return false;
         }
         // 确保 OAuth 客户端已配置
@@ -363,7 +371,12 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       }
       return isConnected;
     } catch (error) {
-      setError('连接测试失败');
+      const errorMessage = error instanceof Error ? error.message : '连接测试失败';
+      if (errorMessage.includes('401') || errorMessage.includes('无效') || errorMessage.includes('过期')) {
+        setError('Notion 授权已失效，请在设置中重新绑定 Notion 账号');
+      } else {
+        setError('连接测试失败');
+      }
       return false;
     }
   };
