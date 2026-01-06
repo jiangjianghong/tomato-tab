@@ -546,11 +546,25 @@ class OptimizedWallpaperService {
 
       if (shouldRefresh) {
         logger.wallpaper.info('检测到跨天或今天未成功更新，尝试获取新壁纸');
-        // 保存旧缓存作为降级备用
+        // 🔧 修复: 如果有旧缓存，立即返回旧缓存，后台异步下载新壁纸
+        // 这样用户不会看到黑灰色背景等待下载
         if (cachedResult) {
-          fallbackCache = cachedResult;
-          logger.wallpaper.info('已获取旧缓存作为降级备用');
+          logger.wallpaper.info('有旧缓存可用，先返回旧缓存，后台下载新壁纸');
+          // 后台异步下载新壁纸（不等待）
+          this.updateWallpaperInBackground(resolution).catch((error) => {
+            logger.wallpaper.warn('后台更新壁纸失败', error);
+          });
+          // 立即返回旧缓存
+          return {
+            url: cachedResult.url,
+            isFromCache: true,
+            isToday: cachedResult.isToday, // 使用缓存的实际日期状态
+            needsUpdate: true,
+            originalUrl: cachedResult.originalUrl,
+          };
         }
+        // 没有旧缓存，只能等待下载（fallbackCache 保持为 null）
+        logger.wallpaper.info('无旧缓存可用，需等待下载新壁纸');
       } else {
         // 1. 如果不需要刷新，尝试使用智能缓存
         if (cachedResult) {
