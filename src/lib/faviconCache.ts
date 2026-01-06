@@ -21,7 +21,7 @@ interface FaviconCacheStorage {
 
 class FaviconCacheManager {
   private metadataKey = 'favicon-metadata';
-  private defaultExpiry = 7 * 24 * 60 * 60 * 1000; // 7天缓存（减少频繁更新）
+  private defaultExpiry = 30 * 24 * 60 * 60 * 1000; // 30天缓存（图标很少变化）
   private metadata: FaviconCacheStorage = {};
   private loadingPromises: Map<string, Promise<string>> = new Map();
   private blobUrlCache = new Map<string, string>(); // domain -> blobUrl 映射
