@@ -13,6 +13,15 @@ interface Announcement {
     expires_at: string | null;
 }
 
+interface AnnouncementReply {
+    id: string;
+    announcement_id: string;
+    user_id: string;
+    content: string;
+    created_at: string;
+    user_email?: string;
+}
+
 const TYPE_OPTIONS = [
     { value: 'info', label: '📢 通知', bgClass: 'bg-blue-500/20', textClass: 'text-blue-400' },
     { value: 'update', label: '🆕 更新', bgClass: 'bg-green-500/20', textClass: 'text-green-400' },
@@ -34,6 +43,12 @@ export default function AdminAnnouncements() {
         expires_at: '',
     });
 
+    // 回复相关状态
+    const [expandedReplyId, setExpandedReplyId] = useState<string | null>(null);
+    const [replies, setReplies] = useState<Record<string, AnnouncementReply[]>>({});
+    const [replyCounts, setReplyCounts] = useState<Record<string, number>>({});
+    const [loadingReplies, setLoadingReplies] = useState<string | null>(null);
+
     useEffect(() => {
         loadAnnouncements();
     }, []);
@@ -48,11 +63,102 @@ export default function AdminAnnouncements() {
 
             if (error) throw error;
             setAnnouncements(data || []);
+
+            // 加载每个公告的回复数量
+            if (data && data.length > 0) {
+                const counts: Record<string, number> = {};
+                for (const announcement of data) {
+                    const { count } = await supabase
+                        .from('announcement_replies')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('announcement_id', announcement.id);
+                    counts[announcement.id] = count || 0;
+                }
+                setReplyCounts(counts);
+            }
         } catch (err: any) {
             console.error('Failed to load announcements:', err);
             setError(err.message);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const loadReplies = async (announcementId: string) => {
+        if (replies[announcementId]) return;
+
+        setLoadingReplies(announcementId);
+        try {
+            const { data, error } = await supabase
+                .from('announcement_replies')
+                .select(`
+                    id,
+                    announcement_id,
+                    user_id,
+                    content,
+                    created_at,
+                    user_profiles:user_id (email)
+                `)
+                .eq('announcement_id', announcementId)
+                .order('created_at', { ascending: true });
+
+            if (error) throw error;
+
+            const formattedReplies = (data || []).map(reply => ({
+                ...reply,
+                user_email: (reply.user_profiles as any)?.email || '未知用户'
+            }));
+
+            setReplies(prev => ({
+                ...prev,
+                [announcementId]: formattedReplies
+            }));
+        } catch (err) {
+            console.error('Failed to load replies:', err);
+        } finally {
+            setLoadingReplies(null);
+        }
+    };
+
+    const deleteReply = async (replyId: string, announcementId: string) => {
+        if (!confirm('确定要删除这条回复吗？')) return;
+
+        try {
+            const { error } = await supabase
+                .from('announcement_replies')
+                .delete()
+                .eq('id', replyId);
+
+            if (error) throw error;
+
+            // 记录日志
+            await logAdminAction('delete_reply', replyId, 'announcement_reply', {
+                announcement_id: announcementId
+            });
+
+            // 从本地状态移除
+            setReplies(prev => ({
+                ...prev,
+                [announcementId]: prev[announcementId]?.filter(r => r.id !== replyId) || []
+            }));
+
+            // 更新回复数量
+            setReplyCounts(prev => ({
+                ...prev,
+                [announcementId]: Math.max((prev[announcementId] || 1) - 1, 0)
+            }));
+        } catch (err: any) {
+            console.error('Failed to delete reply:', err);
+            setError(err.message);
+        }
+    };
+
+    const toggleReplies = async (announcementId: string) => {
+        if (expandedReplyId === announcementId) {
+            setExpandedReplyId(null);
+        } else {
+            setExpandedReplyId(announcementId);
+            await loadReplies(announcementId);
         }
     };
 
@@ -143,6 +249,21 @@ export default function AdminAnnouncements() {
             console.error('Failed to delete announcement:', err);
             setError(err.message);
         }
+    };
+
+    const formatDate = (dateStr: string) => {
+        const date = new Date(dateStr);
+        const now = new Date();
+        const diff = now.getTime() - date.getTime();
+        const minutes = Math.floor(diff / (1000 * 60));
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+        if (minutes < 1) return '刚刚';
+        if (minutes < 60) return `${minutes}分钟前`;
+        if (hours < 24) return `${hours}小时前`;
+        if (days < 7) return `${days}天前`;
+        return date.toLocaleDateString('zh-CN');
     };
 
     if (loading) {
@@ -252,6 +373,10 @@ export default function AdminAnnouncements() {
             <div className="space-y-4">
                 {announcements.map((announcement) => {
                     const typeConfig = TYPE_OPTIONS.find((t) => t.value === announcement.type);
+                    const isRepliesExpanded = expandedReplyId === announcement.id;
+                    const announcementReplies = replies[announcement.id] || [];
+                    const replyCount = replyCounts[announcement.id] || 0;
+
                     return (
                         <div
                             key={announcement.id}
@@ -271,7 +396,7 @@ export default function AdminAnnouncements() {
                                         )}
                                     </div>
                                     <h3 className="text-lg font-semibold text-white mb-1">{announcement.title}</h3>
-                                    <p className="text-white/60 text-sm mb-2">{announcement.content}</p>
+                                    <p className="text-white/60 text-sm mb-2 whitespace-pre-wrap">{announcement.content}</p>
                                     <div className="flex items-center gap-4 text-white/40 text-xs">
                                         <span>创建于 {new Date(announcement.created_at).toLocaleString('zh-CN')}</span>
                                         {announcement.expires_at && (
@@ -280,6 +405,12 @@ export default function AdminAnnouncements() {
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => toggleReplies(announcement.id)}
+                                        className="px-3 py-1 rounded text-xs bg-purple-600/20 text-purple-400 hover:bg-purple-600/30 transition-colors"
+                                    >
+                                        回复({replyCount})
+                                    </button>
                                     <button
                                         onClick={() => handleToggleActive(announcement.id, announcement.is_active)}
                                         className={`px-3 py-1 rounded text-xs transition-colors ${announcement.is_active
@@ -303,6 +434,55 @@ export default function AdminAnnouncements() {
                                     </button>
                                 </div>
                             </div>
+
+                            {/* 回复管理区域 */}
+                            {isRepliesExpanded && (
+                                <div className="mt-4 pt-4 border-t border-white/10">
+                                    <h4 className="text-white/80 text-sm font-medium mb-3">回复管理</h4>
+
+                                    {loadingReplies === announcement.id && (
+                                        <div className="text-center py-4 text-white/40 text-sm">
+                                            <i className="fa-solid fa-spinner fa-spin mr-2"></i>
+                                            加载中...
+                                        </div>
+                                    )}
+
+                                    {!loadingReplies && announcementReplies.length === 0 && (
+                                        <div className="text-center py-4 text-white/40 text-sm">
+                                            暂无回复
+                                        </div>
+                                    )}
+
+                                    <div className="space-y-2">
+                                        {announcementReplies.map((reply) => (
+                                            <div
+                                                key={reply.id}
+                                                className="bg-white/5 rounded-lg p-3 flex items-start justify-between gap-3"
+                                            >
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <span className="text-white/70 text-sm font-medium">
+                                                            {reply.user_email}
+                                                        </span>
+                                                        <span className="text-white/40 text-xs">
+                                                            {formatDate(reply.created_at)}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-white/60 text-sm whitespace-pre-wrap">
+                                                        {reply.content}
+                                                    </p>
+                                                </div>
+                                                <button
+                                                    onClick={() => deleteReply(reply.id, announcement.id)}
+                                                    className="px-2 py-1 rounded text-xs bg-red-600/20 text-red-400 hover:bg-red-600/30 transition-colors shrink-0"
+                                                >
+                                                    删除
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     );
                 })}

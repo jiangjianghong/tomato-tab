@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 interface Announcement {
     id: string;
@@ -8,6 +9,15 @@ interface Announcement {
     content: string;
     type: 'info' | 'warning' | 'update' | 'maintenance';
     created_at: string;
+}
+
+interface AnnouncementReply {
+    id: string;
+    announcement_id: string;
+    user_id: string;
+    content: string;
+    created_at: string;
+    user_name?: string;
 }
 
 const TYPE_CONFIG = {
@@ -46,10 +56,19 @@ interface AnnouncementCenterProps {
 }
 
 export default function AnnouncementCenter({ isVisible = true }: AnnouncementCenterProps) {
+    const { currentUser } = useAuth();
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
     const [isOpen, setIsOpen] = useState(false);
     const [loading, setLoading] = useState(true);
     const [hasUnread, setHasUnread] = useState(false);
+
+    // 回复相关状态
+    const [expandedId, setExpandedId] = useState<string | null>(null);
+    const [replies, setReplies] = useState<Record<string, AnnouncementReply[]>>({});
+    const [replyCounts, setReplyCounts] = useState<Record<string, number>>({});
+    const [replyContent, setReplyContent] = useState('');
+    const [submitting, setSubmitting] = useState(false);
+    const [loadingReplies, setLoadingReplies] = useState<string | null>(null);
 
     useEffect(() => {
         loadAnnouncements();
@@ -70,6 +89,19 @@ export default function AnnouncementCenter({ isVisible = true }: AnnouncementCen
 
             setAnnouncements(data || []);
 
+            // 加载每个公告的回复数量
+            if (data && data.length > 0) {
+                const counts: Record<string, number> = {};
+                for (const announcement of data) {
+                    const { count } = await supabase
+                        .from('announcement_replies')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('announcement_id', announcement.id);
+                    counts[announcement.id] = count || 0;
+                }
+                setReplyCounts(counts);
+            }
+
             // 检查是否有未读公告
             const lastReadTime = localStorage.getItem('last_read_announcements');
             if (data && data.length > 0) {
@@ -87,6 +119,133 @@ export default function AnnouncementCenter({ isVisible = true }: AnnouncementCen
         }
     };
 
+    const loadReplies = async (announcementId: string) => {
+        if (replies[announcementId]) return; // 已加载过
+
+        setLoadingReplies(announcementId);
+        try {
+            // 先查询回复
+            const { data, error } = await supabase
+                .from('announcement_replies')
+                .select('id, announcement_id, user_id, content, created_at')
+                .eq('announcement_id', announcementId)
+                .order('created_at', { ascending: true });
+
+            if (error) throw error;
+
+            // 获取所有唯一的 user_id
+            const userIds = [...new Set((data || []).map(r => r.user_id))];
+
+            // 尝试获取用户 display_name（如果 RLS 允许）
+            let userNames: Record<string, string> = {};
+            if (userIds.length > 0) {
+                const { data: profiles } = await supabase
+                    .from('user_profiles')
+                    .select('id, display_name')
+                    .in('id', userIds);
+
+                if (profiles) {
+                    profiles.forEach(p => {
+                        userNames[p.id] = p.display_name || '';
+                    });
+                }
+            }
+
+            const formattedReplies = (data || []).map(reply => ({
+                ...reply,
+                user_name: userNames[reply.user_id] || `用户${reply.user_id.substring(0, 6)}`
+            }));
+
+            setReplies(prev => ({
+                ...prev,
+                [announcementId]: formattedReplies
+            }));
+        } catch (err) {
+            console.error('Failed to load replies:', err);
+        } finally {
+            setLoadingReplies(null);
+        }
+    };
+
+    const submitReply = async (announcementId: string) => {
+        if (!currentUser || !replyContent.trim()) return;
+
+        setSubmitting(true);
+        try {
+            const { error } = await supabase
+                .from('announcement_replies')
+                .insert({
+                    announcement_id: announcementId,
+                    user_id: currentUser.id,
+                    content: replyContent.trim()
+                });
+
+            if (error) throw error;
+
+            // 清空输入框并重新加载回复
+            setReplyContent('');
+
+            // 重新加载该公告的回复
+            const { data } = await supabase
+                .from('announcement_replies')
+                .select(`
+                    id,
+                    announcement_id,
+                    user_id,
+                    content,
+                    created_at,
+                    user_profiles:user_id (display_name)
+                `)
+                .eq('announcement_id', announcementId)
+                .order('created_at', { ascending: true });
+
+            const formattedReplies = (data || []).map(reply => ({
+                ...reply,
+                user_name: (reply.user_profiles as any)?.display_name || '匿名用户'
+            }));
+
+            setReplies(prev => ({
+                ...prev,
+                [announcementId]: formattedReplies
+            }));
+
+            // 更新回复数量
+            setReplyCounts(prev => ({
+                ...prev,
+                [announcementId]: (prev[announcementId] || 0) + 1
+            }));
+        } catch (err) {
+            console.error('Failed to submit reply:', err);
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const deleteReply = async (replyId: string, announcementId: string) => {
+        try {
+            const { error } = await supabase
+                .from('announcement_replies')
+                .delete()
+                .eq('id', replyId);
+
+            if (error) throw error;
+
+            // 从本地状态移除
+            setReplies(prev => ({
+                ...prev,
+                [announcementId]: prev[announcementId]?.filter(r => r.id !== replyId) || []
+            }));
+
+            // 更新回复数量
+            setReplyCounts(prev => ({
+                ...prev,
+                [announcementId]: Math.max((prev[announcementId] || 1) - 1, 0)
+            }));
+        } catch (err) {
+            console.error('Failed to delete reply:', err);
+        }
+    };
+
     const handleOpen = () => {
         setIsOpen(true);
         setHasUnread(false);
@@ -94,16 +253,36 @@ export default function AnnouncementCenter({ isVisible = true }: AnnouncementCen
         localStorage.setItem('last_read_announcements', new Date().toISOString());
     };
 
+    const toggleExpand = async (announcementId: string) => {
+        if (expandedId === announcementId) {
+            setExpandedId(null);
+        } else {
+            setExpandedId(announcementId);
+            await loadReplies(announcementId);
+        }
+    };
+
     const formatDate = (dateStr: string) => {
         const date = new Date(dateStr);
         const now = new Date();
         const diff = now.getTime() - date.getTime();
+        const minutes = Math.floor(diff / (1000 * 60));
+        const hours = Math.floor(diff / (1000 * 60 * 60));
         const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 
+        if (minutes < 1) return '刚刚';
+        if (minutes < 60) return `${minutes}分钟前`;
+        if (hours < 24) return `${hours}小时前`;
         if (days === 0) return '今天';
         if (days === 1) return '昨天';
         if (days < 7) return `${days}天前`;
         return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+    };
+
+    const formatUserName = (name: string) => {
+        if (!name || name === '匿名用户') return '匿名用户';
+        if (name.length <= 6) return name;
+        return name.substring(0, 6) + '...';
     };
 
     if (!isVisible || loading) return null;
@@ -153,7 +332,7 @@ export default function AnnouncementCenter({ isVisible = true }: AnnouncementCen
                             transition={{ type: 'spring', damping: 25 }}
                             onClick={(e) => e.target === e.currentTarget && setIsOpen(false)}
                         >
-                            <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-gray-200 dark:border-gray-700 rounded-2xl max-h-[70vh] w-full max-w-lg overflow-hidden flex flex-col shadow-2xl">
+                            <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-gray-200 dark:border-gray-700 rounded-2xl max-h-[80vh] w-full max-w-lg overflow-hidden flex flex-col shadow-2xl">
                                 {/* 头部 */}
                                 <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
                                     <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
@@ -178,6 +357,10 @@ export default function AnnouncementCenter({ isVisible = true }: AnnouncementCen
                                     ) : (
                                         announcements.map((announcement) => {
                                             const config = TYPE_CONFIG[announcement.type] || TYPE_CONFIG.info;
+                                            const isExpanded = expandedId === announcement.id;
+                                            const announcementReplies = replies[announcement.id] || [];
+                                            const replyCount = replyCounts[announcement.id] || 0;
+
                                             return (
                                                 <div
                                                     key={announcement.id}
@@ -194,7 +377,114 @@ export default function AnnouncementCenter({ isVisible = true }: AnnouncementCen
                                                                     {formatDate(announcement.created_at)}
                                                                 </span>
                                                             </div>
-                                                            <p className="text-gray-600 dark:text-gray-300 text-sm">{announcement.content}</p>
+                                                            <p className="text-gray-600 dark:text-gray-300 text-sm whitespace-pre-wrap">{announcement.content}</p>
+
+                                                            {/* 回复区域 */}
+                                                            <div className="mt-3 pt-3 border-t border-gray-200/50 dark:border-gray-700/50">
+                                                                <button
+                                                                    onClick={() => toggleExpand(announcement.id)}
+                                                                    className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                                                                >
+                                                                    <i className="fa-solid fa-comment"></i>
+                                                                    <span>{replyCount} 条回复</span>
+                                                                    <i className={`fa-solid fa-chevron-${isExpanded ? 'up' : 'down'} text-xs`}></i>
+                                                                </button>
+
+                                                                <AnimatePresence>
+                                                                    {isExpanded && (
+                                                                        <motion.div
+                                                                            initial={{ height: 0, opacity: 0 }}
+                                                                            animate={{ height: 'auto', opacity: 1 }}
+                                                                            exit={{ height: 0, opacity: 0 }}
+                                                                            transition={{ duration: 0.2 }}
+                                                                            className="overflow-hidden"
+                                                                        >
+                                                                            <div className="mt-3 space-y-2">
+                                                                                {/* 加载中状态 */}
+                                                                                {loadingReplies === announcement.id && (
+                                                                                    <div className="text-center py-2 text-gray-400 text-sm">
+                                                                                        <i className="fa-solid fa-spinner fa-spin mr-2"></i>
+                                                                                        加载中...
+                                                                                    </div>
+                                                                                )}
+
+                                                                                {/* 回复列表 */}
+                                                                                {announcementReplies.map((reply) => (
+                                                                                    <div
+                                                                                        key={reply.id}
+                                                                                        className="bg-white/50 dark:bg-gray-800/50 rounded-lg p-3 text-sm"
+                                                                                    >
+                                                                                        <div className="flex items-center justify-between mb-1">
+                                                                                            <div className="flex items-center gap-2">
+                                                                                                <span className="text-gray-600 dark:text-gray-300 font-medium">
+                                                                                                    {formatUserName(reply.user_name || '')}
+                                                                                                </span>
+                                                                                                <span className="text-gray-400 dark:text-gray-500 text-xs">
+                                                                                                    {formatDate(reply.created_at)}
+                                                                                                </span>
+                                                                                            </div>
+                                                                                            {currentUser?.id === reply.user_id && (
+                                                                                                <button
+                                                                                                    onClick={() => deleteReply(reply.id, announcement.id)}
+                                                                                                    className="text-gray-400 hover:text-red-500 transition-colors"
+                                                                                                    title="删除回复"
+                                                                                                >
+                                                                                                    <i className="fa-solid fa-trash-can text-xs"></i>
+                                                                                                </button>
+                                                                                            )}
+                                                                                        </div>
+                                                                                        <p className="text-gray-700 dark:text-gray-200 whitespace-pre-wrap">
+                                                                                            {reply.content}
+                                                                                        </p>
+                                                                                    </div>
+                                                                                ))}
+
+                                                                                {/* 无回复提示 */}
+                                                                                {!loadingReplies && announcementReplies.length === 0 && (
+                                                                                    <div className="text-center py-2 text-gray-400 text-sm">
+                                                                                        暂无回复，来说点什么吧~
+                                                                                    </div>
+                                                                                )}
+
+                                                                                {/* 回复输入框 */}
+                                                                                {currentUser ? (
+                                                                                    <div className="flex gap-2 mt-3">
+                                                                                        <input
+                                                                                            type="text"
+                                                                                            value={replyContent}
+                                                                                            onChange={(e) => setReplyContent(e.target.value)}
+                                                                                            placeholder="写下你的回复..."
+                                                                                            className="flex-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-700 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                                                                                            onKeyDown={(e) => {
+                                                                                                if (e.key === 'Enter' && !e.shiftKey) {
+                                                                                                    e.preventDefault();
+                                                                                                    submitReply(announcement.id);
+                                                                                                }
+                                                                                            }}
+                                                                                        />
+                                                                                        <button
+                                                                                            onClick={() => submitReply(announcement.id)}
+                                                                                            disabled={submitting || !replyContent.trim()}
+                                                                                            className="px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 dark:disabled:bg-gray-600 text-white rounded-lg text-sm transition-colors disabled:cursor-not-allowed"
+                                                                                        >
+                                                                                            {submitting ? (
+                                                                                                <i className="fa-solid fa-spinner fa-spin"></i>
+                                                                                            ) : (
+                                                                                                '发送'
+                                                                                            )}
+                                                                                        </button>
+                                                                                    </div>
+                                                                                ) : (
+                                                                                    <div className="text-center py-2 text-gray-400 text-sm">
+                                                                                        <i className="fa-solid fa-lock mr-1"></i>
+                                                                                        登录后可发表回复
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                        </motion.div>
+                                                                    )}
+                                                                </AnimatePresence>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>

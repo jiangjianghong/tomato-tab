@@ -284,9 +284,14 @@ CREATE POLICY "Admins can read analytics" ON analytics_daily FOR SELECT USING (i
 DROP POLICY IF EXISTS "System can insert analytics" ON analytics_daily;
 CREATE POLICY "System can insert analytics" ON analytics_daily FOR INSERT WITH CHECK (true);
 
--- Admin can read all user profiles (basic info only)
-DROP POLICY IF EXISTS "Admins can read all profiles" ON user_profiles;
-CREATE POLICY "Admins can read all profiles" ON user_profiles FOR SELECT USING (auth.uid() = id OR is_admin());
+-- Allow public read of user profiles (for displaying reply usernames)
+-- 允许公开读取用户资料（用于显示公告回复的用户名）
+DROP POLICY IF EXISTS "Anyone can read user profiles" ON user_profiles;
+CREATE POLICY "Anyone can read user profiles" ON user_profiles FOR SELECT USING (true);
+
+-- Admin can read all user profiles (basic info only) - 已被上面的策略覆盖，保留以备参考
+-- DROP POLICY IF EXISTS "Admins can read all profiles" ON user_profiles;
+-- CREATE POLICY "Admins can read all profiles" ON user_profiles FOR SELECT USING (auth.uid() = id OR is_admin());
 
 -- Admin can read all user stats
 DROP POLICY IF EXISTS "Admins can read all stats" ON user_stats;
@@ -326,9 +331,9 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE TABLE IF NOT EXISTS admin_logs (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   admin_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-  action_type TEXT NOT NULL CHECK (action_type IN ('ban_user', 'unban_user', 'create_announcement', 'update_announcement', 'delete_announcement', 'toggle_announcement', 'other')),
+  action_type TEXT NOT NULL CHECK (action_type IN ('ban_user', 'unban_user', 'create_announcement', 'update_announcement', 'delete_announcement', 'toggle_announcement', 'delete_reply', 'other')),
   target_id UUID,
-  target_type TEXT CHECK (target_type IN ('user', 'announcement', 'system', 'other')),
+  target_type TEXT CHECK (target_type IN ('user', 'announcement', 'announcement_reply', 'system', 'other')),
   details JSONB DEFAULT '{}'::jsonb,
   ip_address TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -469,5 +474,52 @@ CREATE TRIGGER update_user_notion_tokens_updated_at BEFORE UPDATE ON user_notion
 
 -- ==============================================================================
 -- 部署完成! 新增表: user_notion_tokens
+-- ==============================================================================
+
+-- ==============================================================================
+-- 14. Announcement Replies (公告回复表)
+-- ==============================================================================
+
+-- 存储用户对公告的回复
+CREATE TABLE IF NOT EXISTS announcement_replies (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  announcement_id UUID REFERENCES announcements(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  content TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 索引优化查询性能
+CREATE INDEX IF NOT EXISTS idx_announcement_replies_announcement_id
+ON announcement_replies(announcement_id);
+
+CREATE INDEX IF NOT EXISTS idx_announcement_replies_created_at
+ON announcement_replies(created_at DESC);
+
+ALTER TABLE announcement_replies ENABLE ROW LEVEL SECURITY;
+
+-- RLS Policies
+-- 所有人可以查看回复
+DROP POLICY IF EXISTS "Anyone can read replies" ON announcement_replies;
+CREATE POLICY "Anyone can read replies" ON announcement_replies
+  FOR SELECT USING (true);
+
+-- 登录用户可以发表回复
+DROP POLICY IF EXISTS "Authenticated users can create replies" ON announcement_replies;
+CREATE POLICY "Authenticated users can create replies" ON announcement_replies
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+-- 用户可以删除自己的回复
+DROP POLICY IF EXISTS "Users can delete own replies" ON announcement_replies;
+CREATE POLICY "Users can delete own replies" ON announcement_replies
+  FOR DELETE USING (auth.uid() = user_id);
+
+-- 管理员可以管理所有回复
+DROP POLICY IF EXISTS "Admins can manage all replies" ON announcement_replies;
+CREATE POLICY "Admins can manage all replies" ON announcement_replies
+  FOR ALL USING (is_admin());
+
+-- ==============================================================================
+-- 部署完成! 新增表: announcement_replies
 -- ==============================================================================
 
