@@ -1,7 +1,7 @@
 {
   "name": "tomato-tab",
   "private": true,
-  "version": "0.3.68",
+  "version": "0.3.69",
   "type": "module",
   "scripts": {
     "dev:client": "vite --host --port 3000",
