@@ -6,7 +6,7 @@ import { PoemDisplay } from '@/components/PoemDisplay';
 import { AnimatedCat } from '@/components/AnimatedCat';
 import CardEditModal from '@/components/CardEditModal';
 // 拖拽逻辑已迁移到 WebsiteCard
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useTransparency } from '@/contexts/TransparencyContext';
 import { useAutoSync } from '@/hooks/useAutoSync';
 import EmailVerificationBanner from '@/components/EmailVerificationBanner';
@@ -590,14 +590,16 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
           </motion.div>
         </div>
 
-        {showSettings && (
-          <LazySettings
-            onClose={() => setShowSettings(false)}
-            websites={websites}
-            setWebsites={setWebsites}
-            onSettingsClose={triggerSync}
-          />
-        )}
+        <AnimatePresence>
+          {showSettings && (
+            <LazySettings
+              onClose={() => setShowSettings(false)}
+              websites={websites}
+              setWebsites={setWebsites}
+              onSettingsClose={triggerSync}
+            />
+          )}
+        </AnimatePresence>
 
         {/* 工作空间触发按钮 - 响应式调整 */}
         <motion.div

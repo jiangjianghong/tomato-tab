@@ -783,9 +783,13 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center select-none">
       {/* 背景遮罩 - 增强模糊效果 */}
-      <div
+      <motion.div
         className="absolute inset-0 bg-gradient-to-br from-black/40 via-black/50 to-black/60 backdrop-blur-sm"
         onClick={handleClose}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
       />
 
       <motion.div

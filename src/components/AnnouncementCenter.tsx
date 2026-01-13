@@ -294,20 +294,26 @@ export default function AnnouncementCenter({ isVisible = true }: AnnouncementCen
                 className="fixed bottom-4 left-4 z-40"
                 animate={{ opacity: 1, scale: 1 }}
                 initial={{ opacity: 0, scale: 0.8 }}
-                transition={{ delay: 0.5 }}
+                transition={{ delay: 0.5, duration: 0.3, ease: "easeInOut" }}
             >
-                <button
+                <motion.button
                     onClick={handleOpen}
-                    className="relative p-2 hover:scale-110 transition-all duration-300 group"
+                    className="relative p-3 rounded-full bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-all duration-300 group shadow-lg hover:shadow-xl"
                     title="查看公告"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
                 >
-                    <i className="fa-solid fa-bullhorn text-white/70 group-hover:text-white transition-colors"></i>
+                    <i className="fa-solid fa-bullhorn text-xl text-white/80 group-hover:text-white transition-colors"></i>
 
                     {/* 未读红点 */}
                     {hasUnread && (
-                        <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-slate-900 animate-pulse"></span>
+                        <motion.span
+                            className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-slate-900"
+                            animate={{ scale: [1, 1.2, 1] }}
+                            transition={{ duration: 1.5, repeat: Infinity }}
+                        />
                     )}
-                </button>
+                </motion.button>
             </motion.div>
 
             {/* 公告列表弹窗 */}
@@ -316,79 +322,92 @@ export default function AnnouncementCenter({ isVisible = true }: AnnouncementCen
                     <>
                         {/* 背景遮罩 */}
                         <motion.div
-                            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+                            className="fixed inset-0 bg-gradient-to-br from-black/40 via-black/50 to-black/60 backdrop-blur-sm z-50"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
+                            transition={{ duration: 0.2 }}
                             onClick={() => setIsOpen(false)}
                         />
 
                         {/* 公告面板 - 居中显示 */}
                         <motion.div
                             className="fixed inset-0 z-50 flex items-center justify-center p-4"
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.9 }}
-                            transition={{ type: 'spring', damping: 25 }}
+                            initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.8, y: 20 }}
+                            transition={{ type: 'spring', damping: 25, stiffness: 400 }}
                             onClick={(e) => e.target === e.currentTarget && setIsOpen(false)}
                         >
-                            <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-gray-200 dark:border-gray-700 rounded-2xl max-h-[80vh] w-full max-w-lg overflow-hidden flex flex-col shadow-2xl">
+                            <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-2xl max-h-[80vh] w-full max-w-lg overflow-hidden flex flex-col shadow-[0_35px_80px_-15px_rgba(0,0,0,0.7),0_0_40px_-10px_rgba(0,0,0,0.3)] ring-1 ring-black/5 dark:ring-white/5">
                                 {/* 头部 */}
-                                <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-                                    <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-                                        <i className="fa-solid fa-bullhorn text-gray-500 dark:text-gray-400"></i>
+                                <div className="p-5 border-b border-gray-200/50 dark:border-gray-700/50 flex items-center justify-between bg-gradient-to-r from-transparent via-gray-50/50 to-transparent dark:via-gray-800/50">
+                                    <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2.5">
+                                        <i className="fa-solid fa-bullhorn text-blue-500 text-lg"></i>
                                         系统公告
                                     </h2>
-                                    <button
+                                    <motion.button
                                         onClick={() => setIsOpen(false)}
                                         className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 flex items-center justify-center transition-colors"
+                                        whileHover={{ scale: 1.1 }}
+                                        whileTap={{ scale: 0.9 }}
                                     >
                                         ✕
-                                    </button>
+                                    </motion.button>
                                 </div>
 
                                 {/* 公告列表 */}
-                                <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                                <div className="flex-1 overflow-y-auto p-5 space-y-3 bg-gradient-to-b from-gray-50/30 to-transparent dark:from-gray-800/30">
                                     {announcements.length === 0 ? (
-                                        <div className="text-center py-8 text-gray-400">
-                                            <i className="fa-solid fa-inbox text-4xl mb-3"></i>
-                                            <p>暂无公告</p>
+                                        <div className="text-center py-12 text-gray-400">
+                                            <i className="fa-solid fa-inbox text-5xl mb-4 opacity-50"></i>
+                                            <p className="text-sm">暂无公告</p>
                                         </div>
                                     ) : (
-                                        announcements.map((announcement) => {
+                                        announcements.map((announcement, index) => {
                                             const config = TYPE_CONFIG[announcement.type] || TYPE_CONFIG.info;
                                             const isExpanded = expandedId === announcement.id;
                                             const announcementReplies = replies[announcement.id] || [];
                                             const replyCount = replyCounts[announcement.id] || 0;
 
                                             return (
-                                                <div
+                                                <motion.div
                                                     key={announcement.id}
-                                                    className={`${config.bg} ${config.border} border rounded-xl p-4`}
+                                                    className={`${config.bg} ${config.border} border-2 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300`}
+                                                    initial={{ opacity: 0, y: 20 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ delay: index * 0.05 }}
+                                                    whileHover={{ y: -2 }}
                                                 >
                                                     <div className="flex items-start gap-3">
-                                                        <span className="text-xl">{config.icon}</span>
+                                                        <span className="text-2xl mt-1">{config.icon}</span>
                                                         <div className="flex-1 min-w-0">
-                                                            <div className="flex items-center gap-2 mb-1">
-                                                                <h3 className={`font-medium ${config.text}`}>
+                                                            <div className="flex items-center gap-2 mb-2">
+                                                                <h3 className={`font-semibold text-base ${config.text}`}>
                                                                     {announcement.title}
                                                                 </h3>
-                                                                <span className="text-gray-400 dark:text-gray-500 text-xs">
+                                                                <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
                                                                     {formatDate(announcement.created_at)}
                                                                 </span>
                                                             </div>
-                                                            <p className="text-gray-600 dark:text-gray-300 text-sm whitespace-pre-wrap">{announcement.content}</p>
+                                                            <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">{announcement.content}</p>
 
                                                             {/* 回复区域 */}
-                                                            <div className="mt-3 pt-3 border-t border-gray-200/50 dark:border-gray-700/50">
-                                                                <button
+                                                            <div className="mt-4 pt-3 border-t border-gray-200/50 dark:border-gray-700/50">
+                                                                <motion.button
                                                                     onClick={() => toggleExpand(announcement.id)}
-                                                                    className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                                                                    className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
+                                                                    whileHover={{ x: 2 }}
+                                                                    whileTap={{ scale: 0.98 }}
                                                                 >
-                                                                    <i className="fa-solid fa-comment"></i>
+                                                                    <i className="fa-solid fa-comment text-base"></i>
                                                                     <span>{replyCount} 条回复</span>
-                                                                    <i className={`fa-solid fa-chevron-${isExpanded ? 'up' : 'down'} text-xs`}></i>
-                                                                </button>
+                                                                    <motion.i
+                                                                        className={`fa-solid fa-chevron-${isExpanded ? 'up' : 'down'} text-xs`}
+                                                                        animate={{ rotate: isExpanded ? 180 : 0 }}
+                                                                        transition={{ duration: 0.2 }}
+                                                                    />
+                                                                </motion.button>
 
                                                                 <AnimatePresence>
                                                                     {isExpanded && (
@@ -410,9 +429,12 @@ export default function AnnouncementCenter({ isVisible = true }: AnnouncementCen
 
                                                                                 {/* 回复列表 */}
                                                                                 {announcementReplies.map((reply) => (
-                                                                                    <div
+                                                                                    <motion.div
                                                                                         key={reply.id}
-                                                                                        className="bg-white/50 dark:bg-gray-800/50 rounded-lg p-3 text-sm"
+                                                                                        className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-lg p-3 text-sm border border-gray-200/50 dark:border-gray-700/50 hover:shadow-sm transition-shadow"
+                                                                                        initial={{ opacity: 0, x: -10 }}
+                                                                                        animate={{ opacity: 1, x: 0 }}
+                                                                                        exit={{ opacity: 0, x: -10 }}
                                                                                     >
                                                                                         <div className="flex items-center justify-between mb-1">
                                                                                             <div className="flex items-center gap-2">
@@ -424,19 +446,21 @@ export default function AnnouncementCenter({ isVisible = true }: AnnouncementCen
                                                                                                 </span>
                                                                                             </div>
                                                                                             {currentUser?.id === reply.user_id && (
-                                                                                                <button
+                                                                                                <motion.button
                                                                                                     onClick={() => deleteReply(reply.id, announcement.id)}
-                                                                                                    className="text-gray-400 hover:text-red-500 transition-colors"
+                                                                                                    className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
                                                                                                     title="删除回复"
+                                                                                                    whileHover={{ scale: 1.1 }}
+                                                                                                    whileTap={{ scale: 0.9 }}
                                                                                                 >
                                                                                                     <i className="fa-solid fa-trash-can text-xs"></i>
-                                                                                                </button>
+                                                                                                </motion.button>
                                                                                             )}
                                                                                         </div>
                                                                                         <p className="text-gray-700 dark:text-gray-200 whitespace-pre-wrap">
                                                                                             {reply.content}
                                                                                         </p>
-                                                                                    </div>
+                                                                                    </motion.div>
                                                                                 ))}
 
                                                                                 {/* 无回复提示 */}
@@ -454,7 +478,7 @@ export default function AnnouncementCenter({ isVisible = true }: AnnouncementCen
                                                                                             value={replyContent}
                                                                                             onChange={(e) => setReplyContent(e.target.value)}
                                                                                             placeholder="写下你的回复..."
-                                                                                            className="flex-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-700 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                                                                                            className="flex-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2.5 text-sm text-gray-700 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all"
                                                                                             onKeyDown={(e) => {
                                                                                                 if (e.key === 'Enter' && !e.shiftKey) {
                                                                                                     e.preventDefault();
@@ -462,20 +486,22 @@ export default function AnnouncementCenter({ isVisible = true }: AnnouncementCen
                                                                                                 }
                                                                                             }}
                                                                                         />
-                                                                                        <button
+                                                                                        <motion.button
                                                                                             onClick={() => submitReply(announcement.id)}
                                                                                             disabled={submitting || !replyContent.trim()}
-                                                                                            className="px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 dark:disabled:bg-gray-600 text-white rounded-lg text-sm transition-colors disabled:cursor-not-allowed"
+                                                                                            className="px-4 py-2.5 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 dark:disabled:bg-gray-600 text-white rounded-lg text-sm font-medium transition-colors disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+                                                                                            whileHover={{ scale: submitting || !replyContent.trim() ? 1 : 1.02 }}
+                                                                                            whileTap={{ scale: submitting || !replyContent.trim() ? 1 : 0.98 }}
                                                                                         >
                                                                                             {submitting ? (
                                                                                                 <i className="fa-solid fa-spinner fa-spin"></i>
                                                                                             ) : (
                                                                                                 '发送'
                                                                                             )}
-                                                                                        </button>
+                                                                                        </motion.button>
                                                                                     </div>
                                                                                 ) : (
-                                                                                    <div className="text-center py-2 text-gray-400 text-sm">
+                                                                                    <div className="text-center py-3 text-gray-400 text-sm bg-gray-50/50 dark:bg-gray-800/50 rounded-lg mt-3">
                                                                                         <i className="fa-solid fa-lock mr-1"></i>
                                                                                         登录后可发表回复
                                                                                     </div>
@@ -487,7 +513,7 @@ export default function AnnouncementCenter({ isVisible = true }: AnnouncementCen
                                                             </div>
                                                         </div>
                                                     </div>
-                                                </div>
+                                                </motion.div>
                                             );
                                         })
                                     )}
