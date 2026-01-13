@@ -20,7 +20,6 @@ import { logger } from '@/utils/logger';
 import { customWallpaperManager } from '@/lib/customWallpaperManager';
 import SnowEffect from '@/components/effects/SnowEffect';
 import LeafEffect from '@/components/effects/LeafEffect';
-import AnnouncementBanner from '@/components/AnnouncementBanner';
 import AnnouncementCenter from '@/components/AnnouncementCenter';
 import { isWinterSeason, isAutumnSeason } from '@/utils/solarTerms';
 import { shouldApplyOverlay, clearAllColorCache } from '@/utils/imageColorAnalyzer';
@@ -477,11 +476,6 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
     <>
       {/* 邮箱验证横幅 */}
       <EmailVerificationBanner />
-
-      {/* 系统公告横幅 */}
-      <AnnouncementBanner />
-
-
 
       {/* 壁纸背景层 - 响应式优化 */}
       <div
