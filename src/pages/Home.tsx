@@ -21,8 +21,10 @@ import { customWallpaperManager } from '@/lib/customWallpaperManager';
 import SnowEffect from '@/components/effects/SnowEffect';
 import LeafEffect from '@/components/effects/LeafEffect';
 import AnnouncementCenter from '@/components/AnnouncementCenter';
+import OfflineBanner from '@/components/OfflineBanner';
 import { isWinterSeason, isAutumnSeason } from '@/utils/solarTerms';
 import { shouldApplyOverlay, clearAllColorCache } from '@/utils/imageColorAnalyzer';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 
 // 暴露给控制台调试用
 if (typeof window !== 'undefined') {
@@ -51,6 +53,7 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
   } = useTransparency();
   const { isWorkspaceOpen, setIsWorkspaceOpen } = useWorkspace();
   const { isMobile, getGridClasses, getSearchBarLayout } = useResponsiveLayout();
+  const isOnline = useOnlineStatus(); // 检测网络状态
 
   // 启用自动同步（传递数据初始化状态）
   const { triggerSync } = useAutoSync(websites, dataInitialized);
@@ -474,6 +477,9 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
 
   return (
     <>
+      {/* 离线检测横幅 */}
+      <OfflineBanner isOffline={!isOnline} />
+
       {/* 邮箱验证横幅 */}
       <EmailVerificationBanner />
 
@@ -488,9 +494,9 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
           opacity: wallpaperLoaded ? 1 : 0,
           transform:
             !isSettingsOpen && !isSearchFocused && parallaxEnabled && !isMobile && mousePosition
-              ? `translate(${mousePosition.x * 0.02}px, ${mousePosition.y * 0.02}px) scale(1.05)`
-              : 'translate(0px, 0px) scale(1)',
-          transition: 'opacity 0.5s ease-out, transform 0.3s ease-out',
+              ? `translate(${mousePosition.x * 0.02}px, ${mousePosition.y * 0.02 + (!isOnline ? 60 : 0)}px) scale(1.05)`
+              : `translate(0px, ${!isOnline ? 60 : 0}px) scale(1)`,
+          transition: 'opacity 0.5s ease-out, transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
         }}
       />
 
@@ -504,7 +510,8 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
             background: 'radial-gradient(ellipse 80% 80% at center, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.15) 40%, rgba(0, 0, 0, 0.4) 70%, rgba(0, 0, 0, 0.7) 100%)',
             zIndex: -9,
             pointerEvents: 'none',
-            transition: 'opacity 0.5s ease-out',
+            transform: `translateY(${!isOnline ? 60 : 0}px)`,
+            transition: 'opacity 0.5s ease-out, transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
           }}
         />
       )}
