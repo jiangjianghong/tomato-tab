@@ -325,14 +325,13 @@ export default function CardEditModal({
       >
         <motion.div
           className="w-full max-w-md bg-white dark:bg-gray-900 rounded-xl shadow-xl p-6 select-none"
-          initial={{ opacity: 0, scale: 0.9, rotateX: -10 }}
-          animate={{ opacity: 1, scale: 1, rotateX: 0 }}
-          exit={{ opacity: 0, scale: 0.9, rotateX: 10 }}
+          initial={{ opacity: 0, scale: 0.8, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.8, y: 20 }}
           transition={{
             type: 'spring',
             damping: 25,
-            stiffness: 200,
-            duration: 0.4,
+            stiffness: 400,
           }}
           style={{
             backdropFilter: 'blur(20px)',

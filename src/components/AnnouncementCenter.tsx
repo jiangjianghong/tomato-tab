@@ -298,7 +298,7 @@ export default function AnnouncementCenter({ isVisible = true }: AnnouncementCen
             >
                 <motion.button
                     onClick={handleOpen}
-                    className="relative p-3 rounded-full bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-all duration-300 group shadow-lg hover:shadow-xl"
+                    className="relative p-3 transition-all duration-300 group"
                     title="查看公告"
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.95 }}
@@ -342,17 +342,17 @@ export default function AnnouncementCenter({ isVisible = true }: AnnouncementCen
                             <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-2xl max-h-[80vh] w-full max-w-lg overflow-hidden flex flex-col shadow-[0_35px_80px_-15px_rgba(0,0,0,0.7),0_0_40px_-10px_rgba(0,0,0,0.3)] ring-1 ring-black/5 dark:ring-white/5">
                                 {/* 头部 */}
                                 <div className="p-5 border-b border-gray-200/50 dark:border-gray-700/50 flex items-center justify-between bg-gradient-to-r from-transparent via-gray-50/50 to-transparent dark:via-gray-800/50">
-                                    <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2.5">
+                                    <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2.5 select-none">
                                         <i className="fa-solid fa-bullhorn text-blue-500 text-lg"></i>
                                         系统公告
                                     </h2>
                                     <motion.button
                                         onClick={() => setIsOpen(false)}
-                                        className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 flex items-center justify-center transition-colors"
-                                        whileHover={{ scale: 1.1 }}
+                                        className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                                        whileHover={{ scale: 1.1, rotate: 90 }}
                                         whileTap={{ scale: 0.9 }}
                                     >
-                                        ✕
+                                        <i className="fa-solid fa-xmark"></i>
                                     </motion.button>
                                 </div>
 
@@ -386,7 +386,7 @@ export default function AnnouncementCenter({ isVisible = true }: AnnouncementCen
                                                                 <h3 className={`font-semibold text-base ${config.text}`}>
                                                                     {announcement.title}
                                                                 </h3>
-                                                                <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
+                                                                <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 select-none">
                                                                     {formatDate(announcement.created_at)}
                                                                 </span>
                                                             </div>
@@ -396,7 +396,7 @@ export default function AnnouncementCenter({ isVisible = true }: AnnouncementCen
                                                             <div className="mt-4 pt-3 border-t border-gray-200/50 dark:border-gray-700/50">
                                                                 <motion.button
                                                                     onClick={() => toggleExpand(announcement.id)}
-                                                                    className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
+                                                                    className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium select-none"
                                                                     whileHover={{ x: 2 }}
                                                                     whileTap={{ scale: 0.98 }}
                                                                 >
