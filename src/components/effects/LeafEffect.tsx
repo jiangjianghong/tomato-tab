@@ -64,7 +64,7 @@ export default function LeafEffect({ particleCount = 100, windEnabled = true, is
     // 同步 isSlowMotion prop 到 ref
     isSlowMotionRef.current = isSlowMotion;
 
-    const numLeaves = Math.min(Math.max(particleCount, 10), 100); // 叶子数量由粒子数控制，范围 10-100
+    const numLeaves = Math.max(particleCount, 10); // 叶子数量由粒子数控制，最少 10 个
 
     // 重置叶子位置
     const resetLeaf = useCallback((leaf: Leaf, width: number, height: number, init = false) => {
