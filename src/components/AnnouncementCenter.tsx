@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 
 interface Announcement {
     id: string;
@@ -53,10 +54,12 @@ const TYPE_CONFIG = {
 
 interface AnnouncementCenterProps {
     isVisible?: boolean;
+    onOpenChange?: (isOpen: boolean) => void;
 }
 
-export default function AnnouncementCenter({ isVisible = true }: AnnouncementCenterProps) {
+export default function AnnouncementCenter({ isVisible = true, onOpenChange }: AnnouncementCenterProps) {
     const { currentUser } = useAuth();
+    const { isMobile } = useResponsiveLayout();
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
     const [isOpen, setIsOpen] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -248,9 +251,15 @@ export default function AnnouncementCenter({ isVisible = true }: AnnouncementCen
 
     const handleOpen = () => {
         setIsOpen(true);
+        onOpenChange?.(true);
         setHasUnread(false);
         // 记录阅读时间
         localStorage.setItem('last_read_announcements', new Date().toISOString());
+    };
+
+    const handleClose = () => {
+        setIsOpen(false);
+        onOpenChange?.(false);
     };
 
     const toggleExpand = async (announcementId: string) => {
@@ -291,29 +300,37 @@ export default function AnnouncementCenter({ isVisible = true }: AnnouncementCen
         <>
             {/* 公告入口按钮 - 左下角 */}
             <motion.div
-                className="fixed bottom-4 left-4 z-40"
+                className={isMobile ? "fixed bottom-4 left-2 z-40" : "fixed bottom-4 left-4 z-40"}
                 animate={{ opacity: 1, scale: 1 }}
                 initial={{ opacity: 0, scale: 0.8 }}
                 transition={{ delay: 0.5, duration: 0.3, ease: "easeInOut" }}
             >
-                <motion.button
-                    onClick={handleOpen}
-                    className="relative p-3 transition-all duration-300 group"
-                    title="查看公告"
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.95 }}
-                >
-                    <i className="fa-solid fa-bullhorn text-xl text-white/80 group-hover:text-white transition-colors"></i>
+                <div className="relative group">
+                    <motion.button
+                        onClick={handleOpen}
+                        className="relative p-3 transition-all duration-300"
+                        title="查看公告"
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
+                    >
+                        <i className="fa-solid fa-bullhorn text-xl text-white/80 group-hover:text-white transition-colors"></i>
 
-                    {/* 未读红点 */}
-                    {hasUnread && (
-                        <motion.span
-                            className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-slate-900"
-                            animate={{ scale: [1, 1.2, 1] }}
-                            transition={{ duration: 1.5, repeat: Infinity }}
-                        />
-                    )}
-                </motion.button>
+                        {/* 未读红点 */}
+                        {hasUnread && (
+                            <motion.span
+                                className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-slate-900"
+                                animate={{ scale: [1, 1.2, 1] }}
+                                transition={{ duration: 1.5, repeat: Infinity }}
+                            />
+                        )}
+                    </motion.button>
+
+                    {/* 自定义悬停提示 */}
+                    <div className="absolute left-1/2 transform -translate-x-1/2 bottom-full mb-2 px-2.5 py-1 bg-gray-900/90 text-white text-[0.7rem] rounded-lg shadow-lg backdrop-blur-sm border border-white/10 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-50">
+                        系统公告
+                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-900/90"></div>
+                    </div>
+                </div>
             </motion.div>
 
             {/* 公告列表弹窗 */}
@@ -327,7 +344,7 @@ export default function AnnouncementCenter({ isVisible = true }: AnnouncementCen
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             transition={{ duration: 0.2 }}
-                            onClick={() => setIsOpen(false)}
+                            onClick={handleClose}
                         />
 
                         {/* 公告面板 - 居中显示 */}
@@ -337,7 +354,7 @@ export default function AnnouncementCenter({ isVisible = true }: AnnouncementCen
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.8, y: 20 }}
                             transition={{ type: 'spring', damping: 25, stiffness: 400 }}
-                            onClick={(e) => e.target === e.currentTarget && setIsOpen(false)}
+                            onClick={(e) => e.target === e.currentTarget && handleClose()}
                         >
                             <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-2xl max-h-[80vh] w-full max-w-lg overflow-hidden flex flex-col shadow-[0_35px_80px_-15px_rgba(0,0,0,0.7),0_0_40px_-10px_rgba(0,0,0,0.3)] ring-1 ring-black/5 dark:ring-white/5">
                                 {/* 头部 */}
@@ -347,7 +364,7 @@ export default function AnnouncementCenter({ isVisible = true }: AnnouncementCen
                                         系统公告
                                     </h2>
                                     <motion.button
-                                        onClick={() => setIsOpen(false)}
+                                        onClick={handleClose}
                                         className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                                         whileHover={{ scale: 1.1, rotate: 90 }}
                                         whileTap={{ scale: 0.9 }}

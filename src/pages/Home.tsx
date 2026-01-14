@@ -71,6 +71,7 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
   const [wallpaperLoaded, setWallpaperLoaded] = useState(false); // 壁纸加载状态
   const [showSettings, setShowSettings] = useState(false);
   const [showAddCardModal, setShowAddCardModal] = useState(false);
+  const [isAnnouncementOpen, setIsAnnouncementOpen] = useState(false); // 公告弹窗状态
   const [mousePosition, setMousePosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isFavoriting, setIsFavoriting] = useState(false);
   const [isFavorited, setIsFavorited] = useState(false);
@@ -416,13 +417,13 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
 
   const throttledMouseMove = useRAFThrottledMouseMove(
     handleMouseMove,
-    parallaxEnabled && !isSettingsOpen && !isSearchFocused
+    parallaxEnabled && !isSettingsOpen && !isSearchFocused && !isAnnouncementOpen
   );
 
   // 监听鼠标移动 - 使用 RAF 节流优化性能
   useEffect(() => {
-    // 如果视差被禁用或设置页面打开或搜索框聚焦，不添加鼠标监听器
-    if (!parallaxEnabled || isSettingsOpen || isSearchFocused) {
+    // 如果视差被禁用或设置页面打开或搜索框聚焦或公告弹窗打开，不添加鼠标监听器
+    if (!parallaxEnabled || isSettingsOpen || isSearchFocused || isAnnouncementOpen) {
       setMousePosition({ x: 0, y: 0 });
       return;
     }
@@ -431,7 +432,7 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
     return () => {
       window.removeEventListener('mousemove', throttledMouseMove);
     };
-  }, [parallaxEnabled, isSettingsOpen, isSearchFocused, throttledMouseMove]);
+  }, [parallaxEnabled, isSettingsOpen, isSearchFocused, isAnnouncementOpen, throttledMouseMove]);
 
   // 预加载 favicon（已移除，使用下面的 IndexedDB 批量缓存代替）
 
@@ -493,7 +494,7 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
           backgroundRepeat: 'no-repeat',
           opacity: wallpaperLoaded ? 1 : 0,
           transform:
-            !isSettingsOpen && !isSearchFocused && parallaxEnabled && !isMobile && mousePosition
+            !isSettingsOpen && !isSearchFocused && !isAnnouncementOpen && parallaxEnabled && !isMobile && mousePosition
               ? `translate(${mousePosition.x * 0.02}px, ${mousePosition.y * 0.02 + (!isOnline ? 60 : 0)}px) scale(1.05)`
               : `translate(0px, ${!isOnline ? 60 : 0}px) scale(1)`,
           transition: 'opacity 0.5s ease-out, transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -623,7 +624,7 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
             </button>
 
             {/* 自定义悬停提示 */}
-            <div className="absolute left-1/2 transform -translate-x-1/2 top-full mt-2 px-3 py-1.5 bg-gray-900/90 text-white text-xs rounded-lg shadow-lg backdrop-blur-sm border border-white/10 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-50">
+            <div className="absolute left-1/2 transform -translate-x-1/2 top-full mt-2 px-2.5 py-1 bg-gray-900/90 text-white text-[0.7rem] rounded-lg shadow-lg backdrop-blur-sm border border-white/10 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-50">
               工作空间
               <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-b-4 border-l-transparent border-r-transparent border-b-gray-900/90"></div>
             </div>
@@ -699,17 +700,28 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
           transition={{ duration: 0.3, ease: "easeInOut" }}
           onMouseEnter={preloadSettings} // 鼠标悬停时预加载设置组件
         >
-          <button
-            onClick={() => setShowSettings(true)}
-            className={`${isMobile ? 'p-2' : 'p-2'} text-white/70 hover:text-white transition-colors`}
-            aria-label="设置"
-          >
-            <i className={`fa-solid fa-sliders ${isMobile ? 'text-base' : 'text-lg'}`}></i>
-          </button>
+          <div className="relative group">
+            <button
+              onClick={() => setShowSettings(true)}
+              className={`${isMobile ? 'p-2' : 'p-2'} text-white/70 hover:text-white transition-colors`}
+              aria-label="设置"
+            >
+              <i className={`fa-solid fa-sliders ${isMobile ? 'text-base' : 'text-lg'}`}></i>
+            </button>
+
+            {/* 自定义悬停提示 */}
+            <div className="absolute right-1/2 transform translate-x-1/2 bottom-full mb-2 px-2.5 py-1 bg-gray-900/90 text-white text-[0.7rem] rounded-lg shadow-lg backdrop-blur-sm border border-white/10 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-50">
+              设置
+              <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-900/90"></div>
+            </div>
+          </div>
         </motion.div>
 
         {/* 公告中心入口 - 左下角 */}
-        <AnnouncementCenter isVisible={!isSearchFocused} />
+        <AnnouncementCenter
+          isVisible={!isSearchFocused}
+          onOpenChange={setIsAnnouncementOpen}
+        />
 
         {/* 诗句显示 - 页面下方 */}
         <PoemDisplay />
