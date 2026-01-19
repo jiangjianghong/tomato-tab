@@ -495,7 +495,7 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
           opacity: wallpaperLoaded ? 1 : 0,
           transform:
             !isSettingsOpen && !isSearchFocused && !isAnnouncementOpen && parallaxEnabled && !isMobile && mousePosition
-              ? `translate(${mousePosition.x * 0.02}px, ${mousePosition.y * 0.02 + (!isOnline ? 60 : 0)}px) scale(1.05)`
+              ? `translate(${-mousePosition.x * 0.02}px, ${-mousePosition.y * 0.02 + (!isOnline ? 60 : 0)}px) scale(1.05)`
               : `translate(0px, ${!isOnline ? 60 : 0}px) scale(1)`,
           transition: 'opacity 0.5s ease-out, transform 0.3s linear',
         }}
