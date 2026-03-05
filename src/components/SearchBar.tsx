@@ -2260,7 +2260,8 @@ function SearchBarComponent(props: SearchBarProps = {}) {
                               zIndex: hoveredEmojiIdx === i ? 100 : 2,
                               willChange: 'filter, transform',
                             }}
-                            onClick={() => window.open(emojiLinks[i], '_blank')}
+                            onClick={(e) => { e.stopPropagation(); e.preventDefault(); window.open(emojiLinks[i], '_blank'); }}
+                            onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
                             onMouseEnter={() => setHoveredEmojiIdx(i)}
                             onMouseLeave={() => setHoveredEmojiIdx(null)}
                           >
@@ -2343,7 +2344,7 @@ function SearchBarComponent(props: SearchBarProps = {}) {
                       {emojiList.map((emoji, i) => (
                         <div
                           key={i}
-                          onClick={() => window.open(emojiLinks[i], '_blank')}
+                          onClick={(e) => { e.stopPropagation(); e.preventDefault(); window.open(emojiLinks[i], '_blank'); }}
                           className="flex items-center justify-center p-1.5 rounded-lg cursor-pointer transition-transform duration-150 hover:bg-white/20 hover:scale-110 active:scale-95"
                           style={{ userSelect: 'none' }}
                         >
