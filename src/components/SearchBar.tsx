@@ -2188,8 +2188,8 @@ function SearchBarComponent(props: SearchBarProps = {}) {
                 ref={searchBtnRef}
                 type="submit"
                 whileTap={{ scale: 0.9, filter: 'brightness(0.8)' }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-white/70 hover:text-white transition-colors bg-transparent border-none outline-none group select-none"
-                style={{ pointerEvents: 'auto' }}
+                className="absolute right-3 top-1/2 p-1 text-white/70 hover:text-white transition-colors bg-transparent border-none outline-none group select-none"
+                style={{ pointerEvents: 'auto', y: '-50%' }}
               >
                 <motion.i
                   className="fa-solid fa-magnifying-glass text-sm"
