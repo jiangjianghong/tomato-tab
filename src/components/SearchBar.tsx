@@ -2212,6 +2212,7 @@ function SearchBarComponent(props: SearchBarProps = {}) {
                       pointerEvents: 'auto',
                       transform: 'translate(-50%, -50%)',
                     }}
+                    onPointerDown={(e) => e.stopPropagation()}
                   >
                     <div style={{ position: 'absolute', left: 0, top: 0 }}>
                       {emojiList.map((emoji, i) => {
