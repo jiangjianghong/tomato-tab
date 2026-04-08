@@ -1653,7 +1653,13 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <i className="fa-solid fa-snowflake text-cyan-500 text-sm"></i>
+                      <i className={`fa-solid ${
+                        atmosphereMode === 'snow' ? 'fa-snowflake text-cyan-500' :
+                        atmosphereMode === 'leaf' ? 'fa-leaf text-amber-500' :
+                        atmosphereMode === 'cherry' ? 'fa-fan text-pink-400' :
+                        atmosphereMode === 'firefly' ? 'fa-fire text-yellow-400' :
+                        'fa-snowflake text-cyan-500'
+                      } text-sm`}></i>
                       <span className="text-sm font-medium text-gray-700 dark:text-gray-200 select-none">
                         氛围效果
                       </span>
@@ -1662,6 +1668,8 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                       {atmosphereMode === 'auto' && '根据季节自动切换效果'}
                       {atmosphereMode === 'snow' && '显示雪花飘落效果'}
                       {atmosphereMode === 'leaf' && '显示落叶飘落效果'}
+                      {atmosphereMode === 'cherry' && '显示樱花花瓣飘落效果'}
+                      {atmosphereMode === 'firefly' && '显示萤火虫闪烁效果'}
                       {atmosphereMode === 'off' && '已关闭氛围效果'}
                     </p>
                   </div>
@@ -1692,6 +1700,24 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                         }`}
                     >
                       <i className="fa-solid fa-leaf mr-1"></i>落叶
+                    </button>
+                    <button
+                      onClick={() => setAtmosphereMode('cherry')}
+                      className={`px-2 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${atmosphereMode === 'cherry'
+                        ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                        }`}
+                    >
+                      <i className="fa-solid fa-fan mr-1"></i>樱花
+                    </button>
+                    <button
+                      onClick={() => setAtmosphereMode('firefly')}
+                      className={`px-2 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${atmosphereMode === 'firefly'
+                        ? 'bg-gradient-to-r from-amber-600 to-yellow-600 text-white shadow-md shadow-amber-300/30'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                        }`}
+                    >
+                      <i className="fa-solid fa-fire mr-1"></i>萤火
                     </button>
                     <button
                       onClick={() => setAtmosphereMode('off')}

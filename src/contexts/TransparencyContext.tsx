@@ -41,7 +41,7 @@ interface TransparencyContextType {
   lunchTime: string; // 午休时间 HH:mm
   offWorkTime: string; // 下班时间 HH:mm
   aiIconDisplayMode: 'circular' | 'dropdown'; // AI图标显示模式：圆形布局或下拉面板
-  atmosphereMode: 'auto' | 'snow' | 'leaf' | 'off'; // 氛围效果模式
+  atmosphereMode: 'auto' | 'snow' | 'leaf' | 'cherry' | 'firefly' | 'off'; // 氛围效果模式
   atmosphereParticleCount: number; // 氛围效果粒子数量
   atmosphereWindEnabled: boolean; // 风力效果开关
   darkOverlayEnabled: boolean; // 黑色遮罩开关
@@ -77,7 +77,7 @@ interface TransparencyContextType {
   setLunchTime: (time: string) => void;
   setOffWorkTime: (time: string) => void;
   setAiIconDisplayMode: (mode: 'circular' | 'dropdown') => void;
-  setAtmosphereMode: (mode: 'auto' | 'snow' | 'leaf' | 'off') => void;
+  setAtmosphereMode: (mode: 'auto' | 'snow' | 'leaf' | 'cherry' | 'firefly' | 'off') => void;
   setAtmosphereParticleCount: (count: number) => void;
   setAtmosphereWindEnabled: (enabled: boolean) => void;
   setDarkOverlayEnabled: (enabled: boolean) => void;
@@ -238,15 +238,15 @@ export function TransparencyProvider({ children }: { children: ReactNode }) {
     return saved || 'circular'; // 默认圆形布局
   });
 
-  // 氛围效果模式（自动/雪花/落叶/关闭）
-  const [atmosphereMode, setAtmosphereMode] = useState<'auto' | 'snow' | 'leaf' | 'off'>(() => {
+  // 氛围效果模式（自动/雪花/落叶/樱花/萤火虫/关闭）
+  const [atmosphereMode, setAtmosphereMode] = useState<'auto' | 'snow' | 'leaf' | 'cherry' | 'firefly' | 'off'>(() => {
     const saved = localStorage.getItem('atmosphereMode');
     // 兼容旧的 atmosphereEnabled 配置
     if (!saved) {
       const oldEnabled = localStorage.getItem('atmosphereEnabled');
       return oldEnabled === 'false' ? 'off' : 'auto';
     }
-    return (saved as 'auto' | 'snow' | 'leaf' | 'off') || 'auto';
+    return (saved as 'auto' | 'snow' | 'leaf' | 'cherry' | 'firefly' | 'off') || 'auto';
   });
 
   // 氛围效果粒子数量（1-200，滑轨档位1-100对应粒子数2-200）

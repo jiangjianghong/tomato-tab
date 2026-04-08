@@ -20,6 +20,8 @@ import { logger } from '@/utils/logger';
 import { customWallpaperManager } from '@/lib/customWallpaperManager';
 import SnowEffect from '@/components/effects/SnowEffect';
 import LeafEffect from '@/components/effects/LeafEffect';
+import CherryBlossom from '@/components/effects/CherryBlossom';
+import FireflyEffect from '@/components/effects/Firefly';
 import AnnouncementCenter from '@/components/AnnouncementCenter';
 import OfflineBanner from '@/components/OfflineBanner';
 import { isWinterSeason, isAutumnSeason } from '@/utils/solarTerms';
@@ -525,6 +527,16 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
       {/* 落叶氛围效果 - 粒子数 = 档位 * 4 */}
       {(atmosphereMode === 'leaf' || (atmosphereMode === 'auto' && isAutumnSeason())) && (
         <LeafEffect particleCount={atmosphereParticleCount * 4} windEnabled={atmosphereWindEnabled} isSlowMotion={isSlowMotion} />
+      )}
+
+      {/* 樱花氛围效果 */}
+      {atmosphereMode === 'cherry' && (
+        <CherryBlossom particleCount={atmosphereParticleCount * 5} isSlowMotion={isSlowMotion} />
+      )}
+
+      {/* 萤火虫氛围效果 */}
+      {atmosphereMode === 'firefly' && (
+        <FireflyEffect particleCount={atmosphereParticleCount * 2} isSlowMotion={isSlowMotion} />
       )}
 
 
