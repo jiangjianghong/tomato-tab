@@ -27,6 +27,7 @@ import {
 import { useDataManager } from '@/hooks/useDataManager';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { faviconCache } from '@/lib/faviconCache';
+import { convertBookmarksToWebsites, parseBrowserBookmarkHtml } from '@/utils/browserBookmarks';
 
 interface SettingsProps {
   onClose: () => void;
@@ -239,6 +240,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
   const { currentUser } = useAuth();
   const { updateSyncStatus } = useSyncStatus();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const bookmarkInputRef = useRef<HTMLInputElement>(null);
 
 
   // 记录非自定义模式下的分辨率选择
@@ -637,6 +639,69 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
     }
 
     setPendingImportFile(null);
+  };
+
+  const importBrowserBookmarks = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const maxSize = 10 * 1024 * 1024;
+    const isBookmarkFile = /\.(html?|HTML?)$/.test(file.name) || file.type === 'text/html';
+
+    if (file.size > maxSize) {
+      alert('书签文件过大，请选择小于 10MB 的 HTML 文件。');
+      event.target.value = '';
+      return;
+    }
+
+    if (!isBookmarkFile) {
+      alert('请选择浏览器导出的书签 HTML 文件。');
+      event.target.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const html = String(reader.result || '');
+        const parsedBookmarks = parseBrowserBookmarkHtml(html);
+
+        if (parsedBookmarks.length === 0) {
+          alert('没有在文件中找到可导入的 http/https 书签。');
+          return;
+        }
+
+        const { websites: importedWebsites, skippedDuplicates } = convertBookmarksToWebsites(
+          parsedBookmarks,
+          websites
+        );
+
+        if (importedWebsites.length === 0) {
+          alert(`没有新增书签，已跳过 ${skippedDuplicates} 个重复或无效网址。`);
+          return;
+        }
+
+        setWebsites([...websites, ...importedWebsites]);
+
+        const folderCount = new Set(importedWebsites.map((site) => site.tags[0] || '导入书签')).size;
+        alert(
+          `已导入 ${importedWebsites.length} 个浏览器书签，整理为 ${folderCount} 个文件夹。` +
+          (skippedDuplicates > 0 ? ` 已跳过 ${skippedDuplicates} 个重复或无效网址。` : '')
+        );
+      } catch (error) {
+        const message = error instanceof Error ? error.message : '文件解析失败';
+        alert(`导入浏览器书签失败：${message}`);
+      } finally {
+        event.target.value = '';
+      }
+    };
+
+    reader.onerror = () => {
+      alert('书签文件读取失败，请重新选择文件。');
+      event.target.value = '';
+    };
+
+    reader.readAsText(file);
   };
 
   // 一键修复图标
@@ -2131,7 +2196,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 select-none">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 select-none">
                   <button
                     onClick={exportData}
                     disabled={isExporting}
@@ -2173,6 +2238,14 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                       </>
                     )}
                   </button>
+
+                  <button
+                    onClick={() => bookmarkInputRef.current?.click()}
+                    className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 select-none bg-gradient-to-b from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white shadow-lg shadow-sky-500/30 hover:shadow-xl hover:shadow-blue-600/40 hover:scale-[1.02]"
+                  >
+                    <i className="fa-solid fa-folder-open select-none"></i>
+                    <span className="select-none">导入浏览器书签</span>
+                  </button>
                 </div>
 
                 <input
@@ -2180,6 +2253,13 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                   type="file"
                   accept=".json"
                   onChange={importData}
+                  className="hidden"
+                />
+                <input
+                  ref={bookmarkInputRef}
+                  type="file"
+                  accept=".html,.htm,text/html"
+                  onChange={importBrowserBookmarks}
                   className="hidden"
                 />
 
@@ -2191,7 +2271,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                         重要提醒
                       </div>
                       <div className="text-xs text-teal-600 dark:text-teal-400 select-none">
-                        导入会覆盖所有当前数据，建议先导出备份
+                        导入项目数据会覆盖当前数据；导入浏览器书签只会追加新卡片，并按浏览器文件夹分组。
                       </div>
                     </div>
                   </div>

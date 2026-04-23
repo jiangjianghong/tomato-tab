@@ -57,8 +57,8 @@ export const WebsiteCard = memo(function WebsiteCardComponent({
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
-  const { cardOpacity, cardColor, autoSortEnabled, searchInNewTab } = useTransparency();
-  const { faviconUrl, isLoading, error } = useLazyFavicon(url, favicon, cardRef);
+  const { autoSortEnabled, searchInNewTab } = useTransparency();
+  const { faviconUrl } = useLazyFavicon(url, favicon, cardRef);
   const { isMobile, getCardClasses } = useResponsiveLayout();
 
   const [{ isDragging }, drag] = useDrag({
@@ -257,12 +257,12 @@ export const WebsiteCard = memo(function WebsiteCardComponent({
         {/* 简化的卡片容器 - 保留圆角 */}
         <motion.div
           data-website-card="true"
-          className={`${getCardClasses()} relative rounded-lg`}
+          className={`${getCardClasses()} relative rounded-lg cursor-pointer`}
           style={{
-            backgroundColor: `rgba(${cardColor}, ${cardOpacity})`,
-            backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            boxShadow: isDragging ? '0 20px 40px rgba(0,0,0,0.3)' : 'none', // 拖拽时添加阴影
+            backgroundColor: 'transparent',
+            backdropFilter: 'none',
+            border: '1px solid transparent',
+            boxShadow: 'none',
           }}
           animate={{
             opacity: isDragging ? 0.5 : 1,
@@ -302,26 +302,11 @@ export const WebsiteCard = memo(function WebsiteCardComponent({
           viewport={{ once: true }}
           ref={cardRef}
         >
-          {/* 设置按钮 - 移动端隐藏，通过长按进入编辑 */}
-          {!isMobile && (
-            <div className={`absolute bottom-0.5 right-0.5 z-10`}>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowEditModal(true);
-                }}
-                className={`p-1 text-white/50 hover:text-white select-none transition-all duration-500 ease-out ${isHovered ? 'opacity-100' : 'opacity-0'}`}
-              >
-                <i className="fa-solid fa-gear text-xs select-none"></i>
-              </button>
-            </div>
-          )}
-
-          <div className={`h-full flex flex-col ${isMobile ? 'pt-1.5 pb-1' : 'pt-3'} select-none`}>
+          <div className={`h-full flex flex-col items-center justify-center ${isMobile ? 'px-0.5 py-2' : 'px-2 py-3'} select-none`}>
             {/* 网站图标和名称区域 */}
-            <div className={`flex flex-col items-center ${isMobile ? 'px-0.5' : 'px-2'} select-none`}>
+            <div className="flex flex-col items-center select-none">
               <div
-                className={`${isMobile ? 'w-7 h-7' : 'w-11 h-11 mb-1'} rounded-md overflow-hidden select-none relative`}
+                className={`${isMobile ? 'w-10 h-10' : 'w-14 h-14 mb-2'} rounded-full overflow-hidden select-none relative`}
               >
                 <img
                   src={faviconUrl}
@@ -330,74 +315,19 @@ export const WebsiteCard = memo(function WebsiteCardComponent({
                   loading="lazy"
                   draggable="false"
                 />
-                {/* 状态指示器 */}
-                {isLoading && (
-                  <div
-                    className={`absolute top-0 right-0 ${isMobile ? 'w-1.5 h-1.5' : 'w-2 h-2'} bg-yellow-400 rounded-full animate-pulse`}
-                    title="加载中..."
-                  ></div>
-                )}
-                {!isLoading && error && (
-                  <div
-                    className={`absolute top-0 right-0 ${isMobile ? 'w-1.5 h-1.5' : 'w-2 h-2'} bg-red-400 rounded-full`}
-                    title="加载失败"
-                  ></div>
-                )}
               </div>
               <h3
-                className={`${isMobile ? 'text-[10px] line-clamp-1 mt-0.5 px-0.5' : 'text-xs line-clamp-2 px-2 mt-1'} font-medium text-white text-center select-none`}
+                className={`${isMobile ? 'text-[11px] line-clamp-1 mt-1 px-0.5' : 'text-sm line-clamp-2 px-2 mt-1'} font-medium text-white text-center select-none`}
               >
                 {name}
               </h3>
             </div>
-
-            {/* 备注区域 - 移动端简化 */}
-            {!isMobile && (
-              <div className="px-2 mb-1 select-none">
-                <p className="text-white/60 text-[0.65rem] text-center line-clamp-2 select-none">
-                  {note || new URL(url).hostname}
-                </p>
-              </div>
-            )}
-
-            {/* 标签区域 - 移动端隐藏 */}
-            {!isMobile && (
-              <div className="mt-0 px-3 pb-2 select-none">
-                <div className="flex flex-wrap gap-1 justify-center select-none">
-                  {tags.slice(0, 6).map((tag) => (
-                    <span
-                      key={tag}
-                      className="px-1.5 py-0.5 bg-white/20 rounded-full text-[0.65rem] text-white max-w-[60px] truncate select-none"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* 访问次数显示 - 移动端隐藏 */}
-            {visitCount > 0 && !isMobile && (
-              <div className="px-2 pb-2 select-none">
-                <div className="text-center">
-                  <span
-                    className="px-2 py-1 bg-blue-500/20 text-blue-200 rounded-full text-[0.65rem] border border-blue-300/30 select-none"
-                  >
-                    <i className="fa-solid fa-eye mr-1 select-none"></i>
-                    <span className="select-none">{visitCount}次访问</span>
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {/* 占位空间，保持卡片高度一致 */}
-            <div className="flex-1"></div>
           </div>
 
           {/* 悬停效果边框 */}
           {!isMobile && isHovered && !isDragging && (
             <motion.div
-              className="absolute inset-0 rounded-lg ring-2 ring-white/30 pointer-events-none"
+              className="absolute inset-0 rounded-lg pointer-events-none"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
@@ -432,7 +362,7 @@ export const WebsiteCard = memo(function WebsiteCardComponent({
               exit={{ opacity: 0 }}
               transition={{ duration: 0.5, ease: 'easeOut' }}
               style={{
-                boxShadow: '0 8px 25px rgba(0,0,0,0.2)',
+                boxShadow: 'none',
                 zIndex: -1,
               }}
             />

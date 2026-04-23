@@ -143,8 +143,7 @@ export function TimeDisplay() {
 
   return (
     <div
-      className="absolute left-0 right-0 z-5 flex justify-center px-4 select-none pointer-events-none"
-      style={{ top: isMobile ? '-65px' : '-45px' }} // 向下移动到-45px
+      className="relative z-5 mb-8 flex justify-center px-4 select-none pointer-events-none"
     >
       <motion.div
         className="w-full flex justify-center"
@@ -159,13 +158,13 @@ export function TimeDisplay() {
         <div
           className="relative flex flex-col items-center select-none"
           style={{
-            minHeight: '60px', // 固定最小高度，确保布局稳定
+            minHeight: isMobile ? '82px' : '118px',
             // 当没有日期元素时，时间向下移动以居中显示
             transform: hasAnyDateElement ? 'translateY(0)' : 'translateY(15px)',
           }}
         >
           <div
-            className={`text-white/80 font-mono ${isMobile ? 'text-2xl' : 'text-4xl'} font-semibold tracking-wide mb-1 drop-shadow-sm cursor-pointer hover:text-white/90 transition-all duration-200 hover:scale-105 pointer-events-auto time-display-clickable select-none`}
+            className={`text-white/80 font-mono ${isMobile ? 'text-3xl' : 'text-6xl'} font-semibold tracking-wide mb-2 drop-shadow-sm cursor-pointer hover:text-white/90 transition-all duration-200 hover:scale-105 pointer-events-auto time-display-clickable select-none`}
             onClick={handleTimeClick}
           >
             {(() => {
@@ -205,7 +204,7 @@ export function TimeDisplay() {
 
           {/* 始终占据固定空间，通过透明度控制显示 */}
           <div
-            className="text-white/60 text-sm font-medium drop-shadow-sm h-5 flex items-center justify-center min-w-[200px] select-none"
+            className={`text-white/60 ${isMobile ? 'text-sm' : 'text-lg'} font-medium drop-shadow-sm h-7 flex items-center justify-center min-w-[240px] select-none`}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
           >

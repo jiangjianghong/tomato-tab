@@ -47,7 +47,7 @@ function SearchBarComponent(props: SearchBarProps = {}) {
   // 状态变量声明移到useEffect之前
   const [searchQuery, setSearchQuery] = useState('');
   const [isHovered, setIsHovered] = useState(false);
-  const [engine, setEngine] = useState<'bing' | 'google'>('bing');
+  const [engine, setEngine] = useState<'bing' | 'google'>('google');
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [websiteSuggestions, setWebsiteSuggestions] = useState<WebsiteData[]>([]);
   const [workspaceSuggestions, setWorkspaceSuggestions] = useState<WorkspaceSuggestionData[]>([]);
@@ -55,7 +55,6 @@ function SearchBarComponent(props: SearchBarProps = {}) {
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
   const searchBtnRef = useRef<HTMLButtonElement>(null);
   const [hoveredEmojiIdx, setHoveredEmojiIdx] = useState<number | null>(null);
-  const [showEngineTooltip, setShowEngineTooltip] = useState(false);
   const searchBarRef = useRef<HTMLFormElement>(null);
 
   // TODO功能相关状态
@@ -298,8 +297,8 @@ function SearchBarComponent(props: SearchBarProps = {}) {
   }, [setIsSearchFocused, searchQuery, isFocused, createFireworkEffect, isSettingsOpen, isWorkspaceOpen, showTodoModal]);
 
   const engineList = [
-    { key: 'bing', label: 'Bing', icon: <i className="fa-brands fa-microsoft text-blue-400"></i> },
-    { key: 'google', label: 'Google', icon: <i className="fa-brands fa-google text-blue-500"></i> },
+    { key: 'bing', label: 'Bing', icon: <i className="fa-brands fa-microsoft text-white"></i> },
+    { key: 'google', label: 'Google', icon: <i className="fa-brands fa-google text-white"></i> },
   ];
 
   // 切换搜索引擎并触发动画
@@ -993,6 +992,13 @@ function SearchBarComponent(props: SearchBarProps = {}) {
       createTomatoRain();
     }
 
+    setSuggestions([]);
+    setWebsiteSuggestions([]);
+    setWorkspaceSuggestions([]);
+    setShowSuggestions(false);
+    setSelectedSuggestionIndex(-1);
+    return;
+
     const debounceTimer = setTimeout(() => {
       if (searchQuery.trim()) {
         const queryLower = searchQuery.toLowerCase();
@@ -1514,7 +1520,6 @@ function SearchBarComponent(props: SearchBarProps = {}) {
 
       <div
         className="relative left-0 right-0 z-20 flex justify-center px-4 select-none"
-        style={{ transform: 'translateX(-47px)' }}
       >
         <motion.div
           className="w-full flex justify-center"
@@ -1538,8 +1543,8 @@ function SearchBarComponent(props: SearchBarProps = {}) {
             }}
           >
             <motion.div
-              animate={{ width: isHovered ? (isMobile ? 300 : 520) : isMobile ? 200 : 340 }}
-              initial={{ width: isMobile ? 200 : 340 }}
+              animate={{ width: isHovered ? (isMobile ? 320 : 680) : isMobile ? 240 : 460 }}
+              initial={{ width: isMobile ? 240 : 460 }}
               transition={{
                 type: 'spring',
                 stiffness: animationStyle === 'dynamic' ? 200 : 280,
@@ -1551,46 +1556,20 @@ function SearchBarComponent(props: SearchBarProps = {}) {
                 /* Animation complete */
               }}
             >
-              {/* 搜索引擎切换按钮和“搜索”字样 */}
-              <div className="relative flex items-center">
+              <div className="relative flex-1">
                 <motion.button
                   type="button"
                   whileTap={{ scale: 0.9, filter: 'brightness(0.8)' }}
-                  className="flex items-center gap-2 px-1.5 py-1 text-white/80 hover:text-white bg-transparent border-none outline-none text-lg select-none relative z-20"
-                  style={{
-                    pointerEvents: 'auto',
-                    height: 36,
-                    minWidth: 36,
-                    minHeight: 36,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    display: 'flex',
-                  }}
+                  className="absolute left-4 top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center border-none bg-transparent text-lg text-white/90 outline-none transition-colors hover:text-white"
+                  style={{ pointerEvents: 'auto' }}
                   tabIndex={-1}
+                  aria-label={`切换搜索引擎，当前为 ${engineList.find((e) => e.key === engine)?.label}`}
                   onClick={() => {
                     switchEngine();
                   }}
-                  onMouseEnter={() => setShowEngineTooltip(true)}
-                  onMouseLeave={() => setShowEngineTooltip(false)}
                 >
                   {engineList.find((e) => e.key === engine)?.icon}
-                  <span className="hidden sm:inline text-base font-semibold select-none">
-                    {engineList.find((e) => e.key === engine)?.label}
-                  </span>
                 </motion.button>
-
-                {/* 自定义美观的 tooltip */}
-                {showEngineTooltip && (
-                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800/90 text-white text-sm rounded-lg shadow-lg backdrop-blur-sm border border-white/10 whitespace-nowrap z-30">
-                    切换至 {engine === 'bing' ? 'Google' : 'Bing'}
-                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-800/90"></div>
-                  </div>
-                )}
-              </div>
-              {/* 分隔符 */}
-              <span className="mx-2 text-white/30 select-none font-normal text-base z-10">|</span>
-              <span className="text-white/60 select-none font-normal text-base z-10"></span>
-              <div className="relative flex-1">
                 <input
                   ref={inputRef}
                   type="text"
@@ -1600,6 +1579,12 @@ function SearchBarComponent(props: SearchBarProps = {}) {
                   onFocus={() => {
                     setIsFocused(true);
                     setIsSearchFocused(true);
+                    setSuggestions([]);
+                    setWebsiteSuggestions([]);
+                    setWorkspaceSuggestions([]);
+                    setShowSuggestions(false);
+                    setSelectedSuggestionIndex(-1);
+                    return;
                     // 聚焦时如果有搜索内容，重新生成并显示建议
                     if (searchQuery.trim()) {
                       const matchedWebsites = searchWebsites(searchQuery);
@@ -1654,8 +1639,8 @@ function SearchBarComponent(props: SearchBarProps = {}) {
                       setIsHovered(false);
                     }, 150);
                   }}
-                  placeholder="🧸搜点啥捏..."
-                  className="backdrop-blur-md border border-white/20 pl-4 py-2 text-white placeholder-white/60 outline-none text-base transition-all duration-200 pr-12 w-full ml-3"
+                  placeholder="Search"
+                  className="backdrop-blur-md border border-white/20 py-3 text-white placeholder-white/60 outline-none text-lg transition-all duration-200 pl-14 pr-14 w-full"
                   style={{
                     backgroundColor: `rgba(${searchBarColor}, ${searchBarOpacity})`,
                     minWidth: '4rem',
@@ -1666,7 +1651,7 @@ function SearchBarComponent(props: SearchBarProps = {}) {
 
                 {/* 搜索建议列表 - 现在相对于输入框定位 */}
                 <AnimatePresence>
-                  {showSuggestions && (websiteSuggestions.length > 0 || workspaceSuggestions.length > 0 || suggestions.length > 0) && (
+                  {false && showSuggestions && (websiteSuggestions.length > 0 || workspaceSuggestions.length > 0 || suggestions.length > 0) && (
                     <motion.div
                       className={`absolute top-full left-3 right-0 mt-2 backdrop-blur-md rounded-lg shadow-lg border z-30 overflow-y-auto custom-scrollbar ${isMobile ? 'max-h-72' : 'max-h-96'
                         } ${darkMode ? 'border-gray-700/50' : 'border-white/20'}`}

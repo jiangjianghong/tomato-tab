@@ -2,8 +2,6 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { WebsiteCard } from '@/components/WebsiteCard';
 import { SearchBar } from '@/components/SearchBar';
 import { TimeDisplay } from '@/components/TimeDisplay';
-import { PoemDisplay } from '@/components/PoemDisplay';
-import { AnimatedCat } from '@/components/AnimatedCat';
 import CardEditModal from '@/components/CardEditModal';
 // 拖拽逻辑已迁移到 WebsiteCard
 import { motion, AnimatePresence } from 'framer-motion';
@@ -22,7 +20,6 @@ import SnowEffect from '@/components/effects/SnowEffect';
 import LeafEffect from '@/components/effects/LeafEffect';
 import CherryBlossom from '@/components/effects/CherryBlossom';
 import FireflyEffect from '@/components/effects/Firefly';
-import AnnouncementCenter from '@/components/AnnouncementCenter';
 import OfflineBanner from '@/components/OfflineBanner';
 import { isWinterSeason, isAutumnSeason } from '@/utils/solarTerms';
 import { shouldApplyOverlay, clearAllColorCache } from '@/utils/imageColorAnalyzer';
@@ -32,6 +29,10 @@ import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 if (typeof window !== 'undefined') {
   (window as any).clearWallpaperColorCache = clearAllColorCache;
 }
+
+const isBrowserBookmark = (website: any) =>
+  (typeof website?.id === 'string' && website.id.startsWith('bookmark-')) ||
+  (typeof website?.note === 'string' && website.note.startsWith('来自浏览器书签：'));
 
 interface HomeProps {
   websites: any[];
@@ -46,6 +47,8 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
     isSettingsOpen,
     autoSortEnabled,
     isSearchFocused,
+    cardOpacity,
+    cardColor,
     atmosphereMode,
     atmosphereParticleCount,
     atmosphereWindEnabled,
@@ -73,7 +76,6 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
   const [wallpaperLoaded, setWallpaperLoaded] = useState(false); // 壁纸加载状态
   const [showSettings, setShowSettings] = useState(false);
   const [showAddCardModal, setShowAddCardModal] = useState(false);
-  const [isAnnouncementOpen, setIsAnnouncementOpen] = useState(false); // 公告弹窗状态
   const [mousePosition, setMousePosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isFavoriting, setIsFavoriting] = useState(false);
   const [isFavorited, setIsFavorited] = useState(false);
@@ -340,10 +342,20 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
     }
   }, [darkOverlayMode, bgImage, wallpaperResolution]);
 
+  const regularWebsites = useMemo(
+    () => websites.filter((website) => !isBrowserBookmark(website)),
+    [websites]
+  );
+
+  const browserBookmarks = useMemo(
+    () => websites.filter((website) => isBrowserBookmark(website)),
+    [websites]
+  );
+
   // 根据设置决定是否自动排序卡片
   const displayWebsites = useMemo(() => {
     return autoSortEnabled
-      ? [...websites].sort((a, b) => {
+      ? [...regularWebsites].sort((a, b) => {
         // 首先按访问次数降序排序
         const visitDiff = (b.visitCount || 0) - (a.visitCount || 0);
         if (visitDiff !== 0) return visitDiff;
@@ -353,8 +365,26 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
         const dateB = new Date(b.lastVisit || '2000-01-01').getTime();
         return dateB - dateA;
       })
-      : websites;
-  }, [websites, autoSortEnabled]);
+      : regularWebsites;
+  }, [regularWebsites, autoSortEnabled]);
+
+  const bookmarkFolderGroups = useMemo(() => {
+    const groups = new Map<string, any[]>();
+
+    browserBookmarks.forEach((website) => {
+      const folderName =
+        Array.isArray(website.tags) && website.tags[0]?.trim()
+          ? website.tags[0].trim()
+          : '未分组';
+
+      if (!groups.has(folderName)) {
+        groups.set(folderName, []);
+      }
+      groups.get(folderName)?.push(website);
+    });
+
+    return Array.from(groups.entries()).map(([name, items]) => ({ name, items }));
+  }, [browserBookmarks]);
 
   const handleSaveCard = useCallback((updatedCard: {
     id: string;
@@ -374,6 +404,16 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
   const handleDelete = useCallback((id: string) => {
     setWebsites(websites.filter((card) => card.id !== id));
   }, [websites, setWebsites]);
+
+  const openBookmark = useCallback((bookmark: any) => {
+    handleSaveCard({
+      ...bookmark,
+      visitCount: (bookmark.visitCount || 0) + 1,
+      lastVisit: new Date().toISOString().split('T')[0],
+    });
+
+    window.open(bookmark.url, '_blank');
+  }, [handleSaveCard]);
 
   // 壁纸加载已在上方统一处理
 
@@ -419,13 +459,13 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
 
   const throttledMouseMove = useRAFThrottledMouseMove(
     handleMouseMove,
-    parallaxEnabled && !isSettingsOpen && !isSearchFocused && !isAnnouncementOpen
+    parallaxEnabled && !isSettingsOpen && !isSearchFocused
   );
 
   // 监听鼠标移动 - 使用 RAF 节流优化性能
   useEffect(() => {
-    // 如果视差被禁用或设置页面打开或搜索框聚焦或公告弹窗打开，不添加鼠标监听器
-    if (!parallaxEnabled || isSettingsOpen || isSearchFocused || isAnnouncementOpen) {
+    // 如果视差被禁用或设置页面打开或搜索框聚焦，不添加鼠标监听器
+    if (!parallaxEnabled || isSettingsOpen || isSearchFocused) {
       setMousePosition({ x: 0, y: 0 });
       return;
     }
@@ -434,7 +474,7 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
     return () => {
       window.removeEventListener('mousemove', throttledMouseMove);
     };
-  }, [parallaxEnabled, isSettingsOpen, isSearchFocused, isAnnouncementOpen, throttledMouseMove]);
+  }, [parallaxEnabled, isSettingsOpen, isSearchFocused, throttledMouseMove]);
 
   // 预加载 favicon（已移除，使用下面的 IndexedDB 批量缓存代替）
 
@@ -466,7 +506,7 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
     return {
       container: `relative min-h-[100dvh] ${isMobile ? 'pt-[12vh]' : 'pt-[33vh]'}`,
       searchContainer: searchBarLayout.containerClass,
-      cardContainer: `${isMobile ? 'pt-2 pb-4' : 'pt-16 pb-8'} px-2 max-w-6xl mx-auto`,
+      cardContainer: `${isMobile ? 'pt-4 pb-4' : 'pt-12 pb-8'} px-2 max-w-7xl mx-auto`,
       gridLayout: gridClasses,
       userInfo: isMobile ? 'fixed top-2 right-2 z-40 scale-90' : 'fixed top-4 right-4 z-40',
       workspaceButton: isMobile ? 'fixed top-2 left-2 z-40 scale-90' : 'fixed top-4 left-4 z-40',
@@ -496,7 +536,7 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
           backgroundRepeat: 'no-repeat',
           opacity: wallpaperLoaded ? 1 : 0,
           transform:
-            !isSettingsOpen && !isSearchFocused && !isAnnouncementOpen && parallaxEnabled && !isMobile && mousePosition
+            !isSettingsOpen && !isSearchFocused && parallaxEnabled && !isMobile && mousePosition
               ? `translate(${-mousePosition.x * 0.02}px, ${-mousePosition.y * 0.02 + (!isOnline ? 60 : 0)}px) scale(1.05)`
               : `translate(0px, ${!isOnline ? 60 : 0}px) scale(1)`,
           transition: 'opacity 0.5s ease-out, transform 0.3s linear',
@@ -582,7 +622,6 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
             transition={{ duration: 0.5 }}
           >
             {displayWebsites.map((website, idx) => {
-              // 当启用自动排序时，需要找到原始数组中的索引
               const originalIndex = autoSortEnabled
                 ? websites.findIndex((w) => w.id === website.id)
                 : idx;
@@ -625,20 +664,123 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
           transition={{ duration: 0.3, ease: "easeInOut" }}
           onMouseEnter={preloadWorkspaceModal} // 鼠标悬停时预加载工作空间组件
         >
-          <div className="relative group">
+          <div className="relative min-h-10 min-w-10 group/corner">
             <button
               onClick={() => setIsWorkspaceOpen(true)}
-              className="flex items-center justify-center transition-all duration-200 cursor-pointer p-2"
+              className="flex items-center justify-center transition-all duration-200 cursor-pointer p-2 opacity-0 group-hover/corner:opacity-100 focus-visible:opacity-100"
             >
               <i
-                className={`fa-solid fa-briefcase text-white/70 group-hover:text-white group-hover:drop-shadow-lg transition-all duration-200 ${isMobile ? 'text-sm' : 'text-lg'}`}
+                className={`fa-solid fa-briefcase text-white/70 group-hover/corner:text-white group-hover/corner:drop-shadow-lg transition-all duration-200 ${isMobile ? 'text-sm' : 'text-lg'}`}
               ></i>
             </button>
 
             {/* 自定义悬停提示 */}
-            <div className="absolute left-1/2 transform -translate-x-1/2 top-full mt-2 px-2.5 py-1 bg-gray-900/90 text-white text-[0.7rem] rounded-lg shadow-lg backdrop-blur-sm border border-white/10 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-50">
+            <div className="absolute left-1/2 transform -translate-x-1/2 top-full mt-2 px-2.5 py-1 bg-gray-900/90 text-white text-[0.7rem] rounded-lg shadow-lg backdrop-blur-sm border border-white/10 whitespace-nowrap opacity-0 group-hover/corner:opacity-100 transition-all duration-200 pointer-events-none z-50">
               工作空间
               <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-b-4 border-l-transparent border-r-transparent border-b-gray-900/90"></div>
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div
+          className={isMobile ? 'fixed top-1 right-10 z-40 scale-90' : 'fixed top-2 right-10 z-40'}
+          animate={{
+            opacity: isSearchFocused ? 0 : 1,
+            scale: isSearchFocused ? 0.8 : 1,
+          }}
+          transition={{ duration: 0.3, ease: 'easeInOut' }}
+          data-interactive
+        >
+          <div className="group/bookmarks relative min-h-20 min-w-20">
+            <button
+              className="absolute right-0 top-0 flex h-14 w-14 items-center justify-center text-white/75 opacity-0 transition-all duration-200 hover:text-white group-hover/bookmarks:opacity-100 focus-visible:opacity-100"
+              aria-label="浏览器书签"
+            >
+              <i className="fa-solid fa-bookmark text-xl drop-shadow"></i>
+            </button>
+
+            <div
+              className="pointer-events-none absolute right-0 top-14 w-[min(34rem,calc(100vw-1rem))] origin-top-right translate-y-1 pt-3 text-gray-900 opacity-0 transition-all duration-200 group-hover/bookmarks:pointer-events-auto group-hover/bookmarks:translate-y-0 group-hover/bookmarks:opacity-100 group-focus-within/bookmarks:pointer-events-auto group-focus-within/bookmarks:translate-y-0 group-focus-within/bookmarks:opacity-100"
+            >
+              <div
+                className="overflow-hidden rounded-[18px] border border-black/5 bg-[#f1f1ef] shadow-2xl shadow-black/20"
+              >
+                <div className="flex items-center justify-between px-5 py-4">
+                  <div className="text-lg font-medium text-gray-900">书签</div>
+                  <div className="flex items-center gap-4 text-gray-600">
+                    <i className="fa-solid fa-thumbtack-slash"></i>
+                    <i className="fa-solid fa-xmark text-lg"></i>
+                  </div>
+                </div>
+
+                <div className="px-5 pb-3">
+                  <div className="flex h-14 items-center gap-3 rounded-[18px] bg-white px-4 text-gray-500 shadow-sm">
+                    <i className="fa-solid fa-magnifying-glass text-lg"></i>
+                    <span className="text-base">搜索书签</span>
+                  </div>
+                </div>
+
+                <div className="rounded-t-[16px] bg-white px-5 py-4">
+                  <div className="mb-4 flex items-center gap-5 text-sm text-gray-700">
+                    <span className="mr-auto text-xl text-gray-900">所有书签</span>
+                    <span>创建时间（从晚到早）</span>
+                    <i className="fa-solid fa-filter"></i>
+                    <i className="fa-solid fa-table-cells-large"></i>
+                    <i className="fa-solid fa-pencil"></i>
+                  </div>
+
+                  <button className="mb-3 flex w-full items-center gap-5 rounded-xl px-2 py-2 text-left text-base text-gray-900 hover:bg-gray-100">
+                    <i className="fa-solid fa-plus text-lg"></i>
+                    <span>新建文件夹</span>
+                  </button>
+
+                  {browserBookmarks.length === 0 ? (
+                    <div className="rounded-xl bg-[#f1f1ef] px-4 py-4 text-sm leading-relaxed text-gray-700">
+                      当前浏览器还没有导入书签。打开设置，进入数据管理，导入浏览器书签 HTML 文件。
+                    </div>
+                  ) : (
+                    <div className="max-h-[62vh] overflow-y-auto pr-1 custom-scrollbar">
+                    {bookmarkFolderGroups.map((group) => (
+                      <details
+                        key={group.name}
+                        className="group/folder"
+                      >
+                        <summary className="flex cursor-pointer list-none items-center gap-4 rounded-xl px-2 py-2.5 text-base font-medium text-gray-800 transition-colors hover:bg-[#eeeeec]">
+                          <i className="fa-solid fa-chevron-right w-4 text-sm text-gray-700 transition-transform group-open/folder:rotate-90"></i>
+                          <span className="flex h-9 w-9 items-center justify-center rounded-md bg-[#dfeeda] text-gray-900">
+                            <i className="fa-regular fa-folder"></i>
+                          </span>
+                          <span className="min-w-0 flex-1 truncate">{group.name}</span>
+                          <span className="text-gray-500">({group.items.length})</span>
+                          <i className="fa-solid fa-ellipsis-vertical text-gray-500 opacity-0 group-hover/folder:opacity-100"></i>
+                        </summary>
+
+                        <div className="ml-14 space-y-0.5 pb-1">
+                          {group.items.map((bookmark) => (
+                            <button
+                              key={bookmark.id}
+                              onClick={() => openBookmark(bookmark)}
+                              className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-gray-700 transition-colors hover:bg-[#eeeeec] focus:bg-[#eeeeec] focus:outline-none"
+                            >
+                              <img
+                                src={bookmark.favicon}
+                                alt=""
+                                className="h-5 w-5 shrink-0 rounded-sm"
+                                loading="lazy"
+                              />
+                              <span className="min-w-0 flex-1 truncate text-sm">
+                                {bookmark.name}
+                              </span>
+                              <i className="fa-solid fa-arrow-up-right-from-square text-xs text-gray-400"></i>
+                            </button>
+                          ))}
+                        </div>
+                      </details>
+                    ))}
+                  </div>
+                )}
+                </div>
+              </div>
             </div>
           </div>
         </motion.div>
@@ -655,12 +797,12 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
             whileTap={{ scale: 0.9 }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
           >
-            <div className="relative group">
+            <div className="relative min-h-10 min-w-10 group/corner">
               <button
                 onClick={handleFavoriteWallpaper}
                 onMouseDown={(e) => e.preventDefault()} // 阻止焦点转移，保持搜索框聚焦状态
                 disabled={isFavoriting}
-                className="flex items-center justify-center transition-all duration-300 cursor-pointer hover:scale-110 disabled:cursor-default"
+                className="flex items-center justify-center transition-all duration-300 cursor-pointer hover:scale-110 disabled:cursor-default opacity-0 group-hover/corner:opacity-100 focus-visible:opacity-100"
               >
                 {isFavoriting ? (
                   <i className="fa-solid fa-spinner fa-spin text-white/80 text-lg drop-shadow-lg"></i>
@@ -676,7 +818,7 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
 
               {/* hover提示文字 - 未收藏时 */}
               {!isFavoriting && !isFavorited && !isAlreadyFavorited && (
-                <div className="absolute right-0 top-full mt-2 px-4 py-2 bg-gray-900/90 text-white text-sm rounded-lg shadow-lg backdrop-blur-sm border border-white/10 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-50">
+                <div className="absolute right-0 top-full mt-2 px-4 py-2 bg-gray-900/90 text-white text-sm rounded-lg shadow-lg backdrop-blur-sm border border-white/10 whitespace-nowrap opacity-0 group-hover/corner:opacity-100 transition-all duration-200 pointer-events-none z-50">
                   喜欢此壁纸？点击拿下
                   <div className="absolute bottom-full right-4 w-0 h-0 border-l-4 border-r-4 border-b-4 border-l-transparent border-r-transparent border-b-gray-900/90"></div>
                 </div>
@@ -684,7 +826,7 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
 
               {/* hover提示文字 - 已收藏时 */}
               {!isFavoriting && isAlreadyFavorited && !isFavorited && (
-                <div className="absolute right-0 top-full mt-2 px-4 py-2 bg-red-500/90 text-white text-sm rounded-lg shadow-lg backdrop-blur-sm border border-red-400/30 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-50">
+                <div className="absolute right-0 top-full mt-2 px-4 py-2 bg-red-500/90 text-white text-sm rounded-lg shadow-lg backdrop-blur-sm border border-red-400/30 whitespace-nowrap opacity-0 group-hover/corner:opacity-100 transition-all duration-200 pointer-events-none z-50">
                   ❤️ 已收藏 · 点击取消
                   <div className="absolute bottom-full right-4 w-0 h-0 border-l-4 border-r-4 border-b-4 border-l-transparent border-r-transparent border-b-red-500/90"></div>
                 </div>
@@ -712,34 +854,22 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
           transition={{ duration: 0.3, ease: "easeInOut" }}
           onMouseEnter={preloadSettings} // 鼠标悬停时预加载设置组件
         >
-          <div className="relative group">
+          <div className="relative min-h-10 min-w-10 group/corner">
             <button
               onClick={() => setShowSettings(true)}
-              className={`${isMobile ? 'p-2' : 'p-2'} text-white/70 hover:text-white transition-colors`}
+              className={`${isMobile ? 'p-2' : 'p-2'} text-white/70 hover:text-white transition-all duration-200 opacity-0 group-hover/corner:opacity-100 focus-visible:opacity-100`}
               aria-label="设置"
             >
               <i className={`fa-solid fa-sliders ${isMobile ? 'text-base' : 'text-lg'}`}></i>
             </button>
 
             {/* 自定义悬停提示 */}
-            <div className="absolute right-1/2 transform translate-x-1/2 bottom-full mb-2 px-2.5 py-1 bg-gray-900/90 text-white text-[0.7rem] rounded-lg shadow-lg backdrop-blur-sm border border-white/10 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-50">
+            <div className="absolute right-1/2 transform translate-x-1/2 bottom-full mb-2 px-2.5 py-1 bg-gray-900/90 text-white text-[0.7rem] rounded-lg shadow-lg backdrop-blur-sm border border-white/10 whitespace-nowrap opacity-0 group-hover/corner:opacity-100 transition-all duration-200 pointer-events-none z-50">
               设置
               <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-900/90"></div>
             </div>
           </div>
         </motion.div>
-
-        {/* 公告中心入口 - 左下角 */}
-        <AnnouncementCenter
-          isVisible={!isSearchFocused}
-          onOpenChange={setIsAnnouncementOpen}
-        />
-
-        {/* 诗句显示 - 页面下方 */}
-        <PoemDisplay />
-
-        {/* 动画猫 - 仅在非移动端显示 */}
-        {!isMobile && <AnimatedCat />}
 
         {/* 工作空间模态框 */}
         <LazyWorkspaceModal isOpen={isWorkspaceOpen} onClose={() => setIsWorkspaceOpen(false)} />

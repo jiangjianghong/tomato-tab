@@ -21,7 +21,7 @@ export class StorageManager {
       } else if (consent === 'declined') {
         this.consentCache = 'declined';
       } else {
-        this.consentCache = 'pending';
+        this.consentCache = 'accepted';
       }
       this.cacheTimestamp = Date.now();
       return this.consentCache;

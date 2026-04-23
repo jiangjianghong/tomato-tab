@@ -43,9 +43,9 @@ const DEFAULT_LAYOUT: ResponsiveLayoutConfig = {
     wide: 8,
   },
   gaps: {
-    mobile: 'gap-x-1.5 gap-y-3',  // 更紧凑的间距
-    tablet: 'gap-x-3 gap-y-8',
-    desktop: 'gap-x-4 gap-y-10',
+    mobile: 'gap-x-3 gap-y-5',
+    tablet: 'gap-x-5 gap-y-10',
+    desktop: 'gap-x-6 gap-y-12',
   },
   cardSizes: {
     mobile: 'w-full',
@@ -121,13 +121,13 @@ export function useResponsiveLayout(customConfig?: Partial<ResponsiveLayoutConfi
     const baseClasses = 'grid';
 
     if (layout.isMobile) {
-      return `${baseClasses} grid-cols-4 ${layout.gap} px-2`;  // 4列紧凑网格
+      return `${baseClasses} grid-cols-3 ${layout.gap} px-3`;
     } else if (layout.isTablet) {
       return layout.isTabletLandscape
         ? `${baseClasses} grid-cols-4 ${layout.gap} px-4`
         : `${baseClasses} grid-cols-3 ${layout.gap} px-4`;
     } else {
-      return `${baseClasses} grid-cols-6 lg:grid-cols-8 ${layout.gap} px-6`;
+      return `${baseClasses} grid-cols-4 lg:grid-cols-6 ${layout.gap} px-6`;
     }
   };
 

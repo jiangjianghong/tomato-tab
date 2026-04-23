@@ -21,8 +21,6 @@ import { useState, useEffect, useRef } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useResourcePreloader } from '@/hooks/useResourcePreloader';
 import { useCloudData } from '@/hooks/useCloudData';
-import CookieConsent from '@/components/CookieConsent';
-import PrivacySettings from '@/components/PrivacySettings';
 import { useStorage } from '@/lib/storageManager';
 import { useTransparency } from '@/contexts/TransparencyContext';
 
@@ -72,7 +70,6 @@ function AppContent() {
 
   const [dataInitialized, setDataInitialized] = useState(false);
   const [settingsApplied, setSettingsApplied] = useState(false);
-  const [showPrivacySettings, setShowPrivacySettings] = useState(false);
   const [lastMergedDataId, setLastMergedDataId] = useState<string>('');
 
   // 用于防止重复检查禁用状态
@@ -295,17 +292,6 @@ function AppContent() {
         } />
         <Route path="*" element={<NotFound />} />
       </Routes>
-
-      <CookieConsent
-        onCustomize={() => setShowPrivacySettings(true)}
-      />
-
-      {showPrivacySettings && (
-        <PrivacySettings
-          isOpen={showPrivacySettings}
-          onClose={() => setShowPrivacySettings(false)}
-        />
-      )}
     </>
   );
 }
