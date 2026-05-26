@@ -193,21 +193,16 @@ That's it! Your database is fully configured.
 
 To enable the admin dashboard:
 
-**1. Configure Environment Variable**
-
-Add admin email to your `.env` file:
-```bash
-VITE_ADMIN_EMAIL=your-admin@example.com
-```
-
-**2. Set Admin Role**
+**1. Set Admin Role in Database**
 
 In Supabase SQL Editor, run:
 ```sql
 UPDATE user_profiles SET role = 'super_admin' WHERE email = 'your-admin@example.com';
 ```
 
-**3. Access Admin Dashboard**
+Roles: `user` (default), `admin`, `super_admin`. Admin access is determined entirely by this column — no frontend configuration is required.
+
+**2. Access Admin Dashboard**
 
 After logging in with your admin account, visit `/admin`.
 

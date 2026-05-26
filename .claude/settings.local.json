@@ -30,7 +30,8 @@
       "Bash(supabase --version:*)",
       "Bash(supabase functions deploy:*)",
       "Bash(curl:*)",
-      "WebFetch(domain:developers.notion.com)"
+      "WebFetch(domain:developers.notion.com)",
+      "Bash(pnpm exec *)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

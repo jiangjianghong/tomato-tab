@@ -1,11 +1,8 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
 import { useAuth } from './SupabaseAuthContext';
+import { supabase } from '@/lib/supabase';
 
-// 从环境变量读取管理员邮箱列表
-const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAIL || '')
-    .split(',')
-    .map((e: string) => e.trim().toLowerCase())
-    .filter((e: string) => e.length > 0);
+type Role = 'user' | 'admin' | 'super_admin';
 
 interface AdminContextType {
     isAdmin: boolean;
@@ -29,25 +26,56 @@ interface AdminProviderProps {
 
 export function AdminProvider({ children }: AdminProviderProps) {
     const { currentUser, loading: authLoading } = useAuth();
+    const [role, setRole] = useState<Role | null>(null);
     const [adminLoading, setAdminLoading] = useState(true);
 
-    // 判断当前用户是否为管理员
-    const isAdmin = useMemo(() => {
-        if (!currentUser?.email) return false;
-        return ADMIN_EMAILS.includes(currentUser.email.toLowerCase());
-    }, [currentUser?.email]);
-
-    // 超级管理员（第一个邮箱为超级管理员）
-    const isSuperAdmin = useMemo(() => {
-        if (!currentUser?.email || ADMIN_EMAILS.length === 0) return false;
-        return currentUser.email.toLowerCase() === ADMIN_EMAILS[0];
-    }, [currentUser?.email]);
-
     useEffect(() => {
-        if (!authLoading) {
+        // 等 auth 完成
+        if (authLoading) return;
+
+        // 未登录：直接清空角色
+        if (!currentUser?.id) {
+            setRole(null);
             setAdminLoading(false);
+            return;
         }
-    }, [authLoading]);
+
+        let cancelled = false;
+        setAdminLoading(true);
+
+        (async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('user_profiles')
+                    .select('role')
+                    .eq('id', currentUser.id)
+                    .maybeSingle();
+
+                if (cancelled) return;
+
+                if (error) {
+                    console.warn('Failed to load user role:', error.message);
+                    setRole(null);
+                } else {
+                    setRole((data?.role as Role) ?? 'user');
+                }
+            } catch (err) {
+                if (!cancelled) {
+                    console.warn('Failed to load user role:', err);
+                    setRole(null);
+                }
+            } finally {
+                if (!cancelled) setAdminLoading(false);
+            }
+        })();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [currentUser?.id, authLoading]);
+
+    const isAdmin = useMemo(() => role === 'admin' || role === 'super_admin', [role]);
+    const isSuperAdmin = useMemo(() => role === 'super_admin', [role]);
 
     const value = useMemo<AdminContextType>(() => ({
         isAdmin,

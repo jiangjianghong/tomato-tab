@@ -190,21 +190,16 @@ Vercel 对 Vite 应用提供零配置支持。
 
 如果你想启用管理后台功能，请执行以下步骤：
 
-**1. 配置环境变量**
-
-在 `.env` 文件中添加管理员邮箱：
-```bash
-VITE_ADMIN_EMAIL=your-admin@example.com
-```
-
-**2. 设置管理员角色**
+**1. 设置管理员角色**
 
 在 Supabase SQL Editor 中执行：
 ```sql
 UPDATE user_profiles SET role = 'super_admin' WHERE email = 'your-admin@example.com';
 ```
 
-**3. 访问管理后台**
+角色取值：`user`（默认）、`admin`、`super_admin`。管理员权限完全由该字段判定，前端无需任何额外配置。
+
+**2. 访问管理后台**
 
 使用管理员账号登录后，访问 `/admin` 即可进入管理后台。
 
