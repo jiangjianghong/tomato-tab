@@ -80,6 +80,44 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
   const [isAlreadyFavorited, setIsAlreadyFavorited] = useState(false);
   const [smartOverlayNeeded, setSmartOverlayNeeded] = useState(false); // 智能模式下是否需要遮罩
 
+  // 氛围模式过渡：维护当前正在显示的效果列表（包含正在退场的）
+  type AtmosphereKind = 'snow' | 'leaf' | 'cherry' | 'firefly';
+  type MountedEffect = { id: string; kind: AtmosphereKind; isExiting: boolean };
+  const [mountedEffects, setMountedEffects] = useState<MountedEffect[]>([]);
+
+  // 解析 auto 模式到具体的氛围类型
+  const resolvedAtmosphere = useMemo<AtmosphereKind | 'off'>(() => {
+    if (atmosphereMode === 'auto') {
+      if (isWinterSeason()) return 'snow';
+      if (isAutumnSeason()) return 'leaf';
+      return 'off';
+    }
+    if (atmosphereMode === 'off') return 'off';
+    return atmosphereMode as AtmosphereKind;
+  }, [atmosphereMode]);
+
+  // 当解析后的氛围变化时，更新挂载列表：旧的标记退场、新的加入
+  useEffect(() => {
+    setMountedEffects((prev) => {
+      const next = prev.map((e) =>
+        e.kind === resolvedAtmosphere && !e.isExiting ? e : { ...e, isExiting: true }
+      );
+      const hasActive = next.some((e) => e.kind === resolvedAtmosphere && !e.isExiting);
+      if (resolvedAtmosphere !== 'off' && !hasActive) {
+        next.push({
+          id: `${resolvedAtmosphere}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          kind: resolvedAtmosphere,
+          isExiting: false,
+        });
+      }
+      return next;
+    });
+  }, [resolvedAtmosphere]);
+
+  const handleEffectExited = useCallback((id: string) => {
+    setMountedEffects((prev) => prev.filter((e) => e.id !== id));
+  }, []);
+
   // 阻止空白区域右键菜单
   useEffect(() => {
     const handleContextMenu = (e: MouseEvent) => {
@@ -519,25 +557,56 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
         />
       )}
 
-      {/* 雪花氛围效果 - 粒子数 = 档位 * 6 */}
-      {(atmosphereMode === 'snow' || (atmosphereMode === 'auto' && isWinterSeason())) && (
-        <SnowEffect particleCount={atmosphereParticleCount * 6} windEnabled={atmosphereWindEnabled} isSlowMotion={isSlowMotion} />
-      )}
-
-      {/* 落叶氛围效果 - 粒子数 = 档位 * 4 */}
-      {(atmosphereMode === 'leaf' || (atmosphereMode === 'auto' && isAutumnSeason())) && (
-        <LeafEffect particleCount={atmosphereParticleCount * 4} windEnabled={atmosphereWindEnabled} isSlowMotion={isSlowMotion} />
-      )}
-
-      {/* 樱花氛围效果 */}
-      {atmosphereMode === 'cherry' && (
-        <CherryBlossom particleCount={atmosphereParticleCount * 5} isSlowMotion={isSlowMotion} />
-      )}
-
-      {/* 萤火虫氛围效果 */}
-      {atmosphereMode === 'firefly' && (
-        <FireflyEffect particleCount={atmosphereParticleCount * 2} isSlowMotion={isSlowMotion} />
-      )}
+      {/* 氛围效果：通过 mountedEffects 列表支持平滑切换（旧的退场动画完成后再卸载） */}
+      {mountedEffects.map((effect) => {
+        const onExit = () => handleEffectExited(effect.id);
+        switch (effect.kind) {
+          case 'snow':
+            return (
+              <SnowEffect
+                key={effect.id}
+                particleCount={atmosphereParticleCount * 6}
+                windEnabled={atmosphereWindEnabled}
+                isSlowMotion={isSlowMotion}
+                isExiting={effect.isExiting}
+                onExitComplete={onExit}
+              />
+            );
+          case 'leaf':
+            return (
+              <LeafEffect
+                key={effect.id}
+                particleCount={atmosphereParticleCount * 4}
+                windEnabled={atmosphereWindEnabled}
+                isSlowMotion={isSlowMotion}
+                isExiting={effect.isExiting}
+                onExitComplete={onExit}
+              />
+            );
+          case 'cherry':
+            return (
+              <CherryBlossom
+                key={effect.id}
+                particleCount={atmosphereParticleCount * 5}
+                isSlowMotion={isSlowMotion}
+                isExiting={effect.isExiting}
+                onExitComplete={onExit}
+              />
+            );
+          case 'firefly':
+            return (
+              <FireflyEffect
+                key={effect.id}
+                particleCount={atmosphereParticleCount * 2}
+                isSlowMotion={isSlowMotion}
+                isExiting={effect.isExiting}
+                onExitComplete={onExit}
+              />
+            );
+          default:
+            return null;
+        }
+      })}
 
 
 

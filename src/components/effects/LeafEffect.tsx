@@ -20,12 +20,16 @@ interface Leaf {
     imageIndex: number;
     layer: 'far' | 'near'; // 图层
     opacity: number;
+    birthFrame: number; // 初次出现的帧号（用于入场渐显）
+    dead: boolean; // 退场时标记为待移除
 }
 
 interface LeafEffectProps {
     particleCount?: number;
     windEnabled?: boolean; // 风力开关
     isSlowMotion?: boolean; // 慢放效果
+    isExiting?: boolean;
+    onExitComplete?: () => void;
 }
 
 // 内置 SVG 尖叶子（统一形状，不同颜色）
@@ -44,7 +48,7 @@ const LEAF_SVGS = [
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 50"><path fill="#F39C12" stroke="#D68910" stroke-width="0.5" d="M15 2 Q26 17 21 32 Q17 44 15 48 Q13 44 9 32 Q4 17 15 2 Z"/><line x1="15" y1="8" x2="15" y2="45" stroke="#D68910" stroke-width="0.6"/></svg>`,
 ];
 
-export default function LeafEffect({ particleCount = 100, windEnabled = true, isSlowMotion = false }: LeafEffectProps) {
+export default function LeafEffect({ particleCount = 100, windEnabled = true, isSlowMotion = false, isExiting = false, onExitComplete }: LeafEffectProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const sceneRef = useRef<HTMLDivElement>(null);
     const nearSceneRef = useRef<HTMLDivElement>(null); // 近景层
@@ -53,6 +57,9 @@ export default function LeafEffect({ particleCount = 100, windEnabled = true, is
     const animationRef = useRef<number | null>(null);
     const isSlowMotionRef = useRef(isSlowMotion); // 使用 ref 存储最新值
     const currentMotionFactorRef = useRef(1); // 当前运动系数，用于平滑过渡
+    const isExitingRef = useRef(isExiting);
+    const onExitCompleteRef = useRef(onExitComplete);
+    const hasNotifiedExitRef = useRef(false);
     const windRef = useRef({
         magnitude: 1.2,
         maxSpeed: 12,
@@ -63,6 +70,8 @@ export default function LeafEffect({ particleCount = 100, windEnabled = true, is
 
     // 同步 isSlowMotion prop 到 ref
     isSlowMotionRef.current = isSlowMotion;
+    isExitingRef.current = isExiting;
+    onExitCompleteRef.current = onExitComplete;
 
     const numLeaves = Math.max(particleCount, 10); // 叶子数量由粒子数控制，最少 10 个
 
@@ -126,6 +135,8 @@ export default function LeafEffect({ particleCount = 100, windEnabled = true, is
     // 更新单个叶子
     const SLOW_MOTION_FACTOR = 0.1; // 慢放时速度降为原来的 10%
     const TRANSITION_SPEED = 0.05; // 过渡速度
+    const EXIT_SPEED_MULTIPLIER = 2.2; // 退场时下落速度倍率
+    const ENTER_FRAMES = 36; // 入场淡入帧数（约 1.2s @ 30fps）
     const updateLeaf = useCallback((leaf: Leaf, width: number, height: number) => {
         const wind = windRef.current;
         const timer = timerRef.current;
@@ -134,13 +145,23 @@ export default function LeafEffect({ particleCount = 100, windEnabled = true, is
         const targetFactor = isSlowMotionRef.current ? SLOW_MOTION_FACTOR : 1;
         currentMotionFactorRef.current += (targetFactor - currentMotionFactorRef.current) * TRANSITION_SPEED;
         const motionFactor = currentMotionFactorRef.current;
+        const speedBoost = isExitingRef.current ? EXIT_SPEED_MULTIPLIER : 1;
 
         const leafWindSpeed = windEnabled ? wind.speed(timer - wind.start, leaf.y) * motionFactor : 0;
         const xSpeed = leafWindSpeed + leaf.xSpeedVariation * motionFactor;
 
         leaf.x -= xSpeed;
-        leaf.y += leaf.ySpeed * motionFactor;
+        leaf.y += leaf.ySpeed * motionFactor * speedBoost;
         leaf.rotation.value += leaf.rotation.speed * motionFactor;
+
+        // 入场渐显：根据出生帧差控制 opacity
+        const age = timer - leaf.birthFrame;
+        if (age < ENTER_FRAMES) {
+            const progress = Math.max(0, age / ENTER_FRAMES);
+            leaf.el.style.opacity = String(leaf.opacity * progress);
+        } else if (leaf.el.style.opacity !== String(leaf.opacity)) {
+            leaf.el.style.opacity = String(leaf.opacity);
+        }
 
         // 构建 3D 变换
         let transform = `translateX(${leaf.x}px) translateY(${leaf.y}px) translateZ(${leaf.z}px) rotate${leaf.rotation.axis}(${leaf.rotation.value}deg)`;
@@ -150,9 +171,17 @@ export default function LeafEffect({ particleCount = 100, windEnabled = true, is
 
         leaf.el.style.transform = transform;
 
-        // 超出视野则重置
+        // 超出视野时：退场不复用，移除 DOM；否则按原逻辑 reset 循环利用
         if (leaf.x < -10 || leaf.y > height + 10) {
-            resetLeaf(leaf, width, height);
+            if (isExitingRef.current) {
+                leaf.dead = true;
+                if (leaf.el.parentNode) {
+                    leaf.el.parentNode.removeChild(leaf.el);
+                }
+            } else {
+                resetLeaf(leaf, width, height);
+                leaf.birthFrame = timer; // 重新入场也算一次淡入
+            }
         }
     }, [resetLeaf, windEnabled]);
 
@@ -196,7 +225,7 @@ export default function LeafEffect({ particleCount = 100, windEnabled = true, is
                 transform-style: preserve-3d;
                 backface-visibility: visible;
                 will-change: transform;
-                opacity: ${opacity};
+                opacity: 0;
             `;
 
             const leaf: Leaf = {
@@ -210,6 +239,9 @@ export default function LeafEffect({ particleCount = 100, windEnabled = true, is
                 imageIndex,
                 layer,
                 opacity,
+                // 出生帧错开：让入场不是齐刷刷出现
+                birthFrame: Math.floor(Math.random() * 24),
+                dead: false,
             };
 
             resetLeaf(leaf, width, height, true);
@@ -231,7 +263,17 @@ export default function LeafEffect({ particleCount = 100, windEnabled = true, is
             if (windEnabled) {
                 updateWind(h);
             }
-            leavesRef.current.forEach(leaf => updateLeaf(leaf, w, h));
+            leavesRef.current.forEach(leaf => {
+                if (!leaf.dead) updateLeaf(leaf, w, h);
+            });
+            // 清理已死亡的叶子
+            if (isExitingRef.current) {
+                leavesRef.current = leavesRef.current.filter(l => !l.dead);
+                if (leavesRef.current.length === 0 && !hasNotifiedExitRef.current) {
+                    hasNotifiedExitRef.current = true;
+                    onExitCompleteRef.current?.();
+                }
+            }
             timerRef.current++;
 
             animationRef.current = requestAnimationFrame(animate);

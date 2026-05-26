@@ -22,11 +22,15 @@ interface Petal {
 interface CherryBlossomProps {
     particleCount?: number;
     isSlowMotion?: boolean;
+    isExiting?: boolean;
+    onExitComplete?: () => void;
 }
 
 const SPAWN_RATE = 0.4;
 const SLOW_MOTION_FACTOR = 0.1;
 const TRANSITION_SPEED = 0.05;
+const EXIT_SPEED_MULTIPLIER = 2.2;
+const ENTER_DURATION = 1200;
 
 // 粉色花瓣颜色
 const PETAL_COLORS = [
@@ -37,7 +41,7 @@ const PETAL_COLORS = [
     'rgba(255, 223, 230,',
 ];
 
-export default function CherryBlossom({ particleCount = 80, isSlowMotion = false }: CherryBlossomProps) {
+export default function CherryBlossom({ particleCount = 80, isSlowMotion = false, isExiting = false, onExitComplete }: CherryBlossomProps) {
     const maxPetals = particleCount;
     const farCanvasRef = useRef<HTMLCanvasElement>(null);
     const nearCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -47,8 +51,14 @@ export default function CherryBlossom({ particleCount = 80, isSlowMotion = false
     const timerRef = useRef(0);
     const isSlowMotionRef = useRef(isSlowMotion);
     const currentMotionFactorRef = useRef(1);
+    const isExitingRef = useRef(isExiting);
+    const onExitCompleteRef = useRef(onExitComplete);
+    const hasNotifiedExitRef = useRef(false);
+    const mountTimeRef = useRef(0);
 
     isSlowMotionRef.current = isSlowMotion;
+    isExitingRef.current = isExiting;
+    onExitCompleteRef.current = onExitComplete;
 
     // 温和风力系统（比落叶风力和雪花风力都小）
     const windRef = useRef({
@@ -139,20 +149,24 @@ export default function CherryBlossom({ particleCount = 80, isSlowMotion = false
         nearCtx.clearRect(0, 0, width, height);
 
         const currentSpawnRate = SPAWN_RATE * currentMotionFactorRef.current;
-        if (petalsRef.current.length < maxPetals && Math.random() < currentSpawnRate) {
+        const elapsedSinceMount = currentTime - mountTimeRef.current;
+        const enterProgress = Math.min(1, elapsedSinceMount / ENTER_DURATION);
+        const dynamicMax = isExitingRef.current ? 0 : Math.floor(maxPetals * enterProgress);
+        if (!isExitingRef.current && petalsRef.current.length < dynamicMax && Math.random() < currentSpawnRate) {
             petalsRef.current.push(createPetal(width));
         }
 
         const targetFactor = isSlowMotionRef.current ? SLOW_MOTION_FACTOR : 1;
         currentMotionFactorRef.current += (targetFactor - currentMotionFactorRef.current) * TRANSITION_SPEED;
         const motionFactor = currentMotionFactorRef.current;
+        const speedBoost = isExitingRef.current ? EXIT_SPEED_MULTIPLIER : 1;
 
         petalsRef.current = petalsRef.current.filter((petal) => {
             // 风力影响
             const windSpeed = wind.speed(timerRef.current - wind.start, petal.y) * 0.8 * motionFactor;
             petal.x -= windSpeed;
             petal.x += Math.sin(petal.swingOffset) * petal.swing * 0.3 * motionFactor;
-            petal.y += petal.speed * motionFactor;
+            petal.y += petal.speed * motionFactor * speedBoost;
             petal.swingOffset += petal.swingSpeed * motionFactor;
             petal.rotation += petal.rotationSpeed * motionFactor;
 
@@ -161,6 +175,11 @@ export default function CherryBlossom({ particleCount = 80, isSlowMotion = false
 
             return petal.y < height + 20;
         });
+
+        if (isExitingRef.current && petalsRef.current.length === 0 && !hasNotifiedExitRef.current) {
+            hasNotifiedExitRef.current = true;
+            onExitCompleteRef.current?.();
+        }
 
         const farPetals = petalsRef.current.filter(p => p.layer === 'far');
         const nearPetals = petalsRef.current.filter(p => p.layer === 'near');
@@ -190,6 +209,7 @@ export default function CherryBlossom({ particleCount = 80, isSlowMotion = false
 
     useEffect(() => {
         resizeCanvas();
+        mountTimeRef.current = performance.now();
         animationFrameRef.current = requestAnimationFrame(animate);
         window.addEventListener('resize', resizeCanvas);
 

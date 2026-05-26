@@ -25,10 +25,13 @@ interface Firefly {
 interface FireflyEffectProps {
     particleCount?: number;
     isSlowMotion?: boolean;
+    isExiting?: boolean;
+    onExitComplete?: () => void;
 }
 
 const SLOW_MOTION_FACTOR = 0.1;
 const TRANSITION_SPEED = 0.05;
+const ENTER_DURATION = 1200; // 入场补满粒子的时长（ms）
 
 // 萤火虫颜色：温暖的黄色/橙色
 const FIREFLY_COLORS = [
@@ -38,7 +41,7 @@ const FIREFLY_COLORS = [
     { r: 180, g: 255, b: 100 }, // 黄绿
 ];
 
-export default function FireflyEffect({ particleCount = 40, isSlowMotion = false }: FireflyEffectProps) {
+export default function FireflyEffect({ particleCount = 40, isSlowMotion = false, isExiting = false, onExitComplete }: FireflyEffectProps) {
     const maxFireflies = particleCount;
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const firefliesRef = useRef<Firefly[]>([]);
@@ -47,8 +50,14 @@ export default function FireflyEffect({ particleCount = 40, isSlowMotion = false
     const lastFrameTimeRef = useRef(0);
     const isSlowMotionRef = useRef(isSlowMotion);
     const currentMotionFactorRef = useRef(1);
+    const isExitingRef = useRef(isExiting);
+    const onExitCompleteRef = useRef(onExitComplete);
+    const hasNotifiedExitRef = useRef(false);
+    const mountTimeRef = useRef(0);
 
     isSlowMotionRef.current = isSlowMotion;
+    isExitingRef.current = isExiting;
+    onExitCompleteRef.current = onExitComplete;
 
     const createFirefly = useCallback((width: number, height: number): Firefly => {
         const isNear = Math.random() > 0.5;
@@ -95,11 +104,29 @@ export default function FireflyEffect({ particleCount = 40, isSlowMotion = false
         currentMotionFactorRef.current += (targetFactor - currentMotionFactorRef.current) * TRANSITION_SPEED;
         const motionFactor = currentMotionFactorRef.current;
 
-        // 初始化萤火虫
-        if (firefliesRef.current.length < maxFireflies) {
-            const needed = maxFireflies - firefliesRef.current.length;
-            for (let i = 0; i < needed; i++) {
-                firefliesRef.current.push(createFirefly(width, height));
+        // 退场逻辑：停止补充粒子，加速向上飘走并淡出
+        if (isExitingRef.current) {
+            firefliesRef.current = firefliesRef.current.filter((firefly) => {
+                firefly.opacity *= 0.94;
+                firefly.baseY -= 1.4;
+                firefly.targetOpacity = 0;
+                return firefly.opacity > 0.02;
+            });
+
+            if (firefliesRef.current.length === 0 && !hasNotifiedExitRef.current) {
+                hasNotifiedExitRef.current = true;
+                onExitCompleteRef.current?.();
+            }
+        } else {
+            // 入场：粒子数按时间逐步补满，避免一次性铺满屏幕
+            const elapsed = _currentTime - mountTimeRef.current;
+            const enterProgress = Math.min(1, elapsed / ENTER_DURATION);
+            const targetCount = Math.floor(maxFireflies * enterProgress);
+            if (firefliesRef.current.length < targetCount) {
+                const needed = Math.min(2, targetCount - firefliesRef.current.length);
+                for (let i = 0; i < needed; i++) {
+                    firefliesRef.current.push(createFirefly(width, height));
+                }
             }
         }
 
@@ -163,6 +190,7 @@ export default function FireflyEffect({ particleCount = 40, isSlowMotion = false
 
     useEffect(() => {
         resizeCanvas();
+        mountTimeRef.current = performance.now();
         animationFrameRef.current = requestAnimationFrame(animate);
         window.addEventListener('resize', resizeCanvas);
 

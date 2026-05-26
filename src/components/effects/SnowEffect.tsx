@@ -22,6 +22,8 @@ interface SnowEffectProps {
     particleCount?: number;
     windEnabled?: boolean; // 风力开关
     isSlowMotion?: boolean; // 慢放效果
+    isExiting?: boolean; // 退场状态：停止生成新粒子，加速飘出
+    onExitComplete?: () => void;
 }
 
 // 性能配置
@@ -29,8 +31,10 @@ const SPAWN_RATE = 0.5;
 const SIZE_THRESHOLD = 2.2;
 const SLOW_MOTION_FACTOR = 0.1; // 慢放时速度降为原来的 10%
 const TRANSITION_SPEED = 0.05; // 过渡速度，每帧向目标值靠近 5%
+const EXIT_SPEED_MULTIPLIER = 2.2; // 退场时下落速度倍率
+const ENTER_DURATION = 1200; // 入场时长（ms）
 
-export default function SnowEffect({ particleCount = 100, windEnabled = true, isSlowMotion = false }: SnowEffectProps) {
+export default function SnowEffect({ particleCount = 100, windEnabled = true, isSlowMotion = false, isExiting = false, onExitComplete }: SnowEffectProps) {
     const maxSnowflakes = particleCount;
     const farCanvasRef = useRef<HTMLCanvasElement>(null);
     const nearCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -40,9 +44,15 @@ export default function SnowEffect({ particleCount = 100, windEnabled = true, is
     const timerRef = useRef(0);
     const isSlowMotionRef = useRef(isSlowMotion); // 使用 ref 存储最新值
     const currentMotionFactorRef = useRef(1); // 当前运动系数，用于平滑过渡
+    const isExitingRef = useRef(isExiting);
+    const onExitCompleteRef = useRef(onExitComplete);
+    const hasNotifiedExitRef = useRef(false);
+    const mountTimeRef = useRef(0);
 
     // 同步 isSlowMotion prop 到 ref
     isSlowMotionRef.current = isSlowMotion;
+    isExitingRef.current = isExiting;
+    onExitCompleteRef.current = onExitComplete;
 
     // 风力系统
     const windRef = useRef({
@@ -122,8 +132,12 @@ export default function SnowEffect({ particleCount = 100, windEnabled = true, is
         nearCtx.clearRect(0, 0, width, height);
 
         // 可能生成新雪花（使用当前运动系数控制生成速度）
+        // 入场时按时间逐步提升上限，退场时不再生成
+        const elapsedSinceMount = currentTime - mountTimeRef.current;
+        const enterProgress = Math.min(1, elapsedSinceMount / ENTER_DURATION);
+        const dynamicMax = isExitingRef.current ? 0 : Math.floor(maxSnowflakes * enterProgress);
         const currentSpawnRate = SPAWN_RATE * currentMotionFactorRef.current;
-        if (snowflakesRef.current.length < maxSnowflakes && Math.random() < currentSpawnRate) {
+        if (!isExitingRef.current && snowflakesRef.current.length < dynamicMax && Math.random() < currentSpawnRate) {
             snowflakesRef.current.push(createSnowflake(width));
         }
 
@@ -133,11 +147,12 @@ export default function SnowEffect({ particleCount = 100, windEnabled = true, is
 
         // 更新雪花位置并过滤
         const motionFactor = currentMotionFactorRef.current;
+        const speedBoost = isExitingRef.current ? EXIT_SPEED_MULTIPLIER : 1;
         snowflakesRef.current = snowflakesRef.current.filter((flake) => {
             // 计算风力影响
             const windSpeed = windEnabled ? wind.speed(timer - wind.start, flake.y) * 0.5 * motionFactor : 0;
             flake.x -= windSpeed;
-            flake.y += flake.speed * motionFactor;
+            flake.y += flake.speed * motionFactor * speedBoost;
             flake.swingOffset += flake.swingSpeed * motionFactor;
 
             // 超出左右边界时重新出现在另一侧
@@ -146,6 +161,12 @@ export default function SnowEffect({ particleCount = 100, windEnabled = true, is
 
             return flake.y < height + 10;
         });
+
+        // 退场完成检测：粒子清空后通知一次
+        if (isExitingRef.current && snowflakesRef.current.length === 0 && !hasNotifiedExitRef.current) {
+            hasNotifiedExitRef.current = true;
+            onExitCompleteRef.current?.();
+        }
 
         // 分别获取远景和近景雪花
         const farFlakes = snowflakesRef.current.filter(f => f.layer === 'far');
@@ -187,6 +208,7 @@ export default function SnowEffect({ particleCount = 100, windEnabled = true, is
 
     useEffect(() => {
         resizeCanvas();
+        mountTimeRef.current = performance.now();
         animationFrameRef.current = requestAnimationFrame(animate);
         window.addEventListener('resize', resizeCanvas);
 

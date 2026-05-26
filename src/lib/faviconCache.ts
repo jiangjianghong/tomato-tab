@@ -150,17 +150,24 @@ class FaviconCacheManager {
   }
 
   /**
-   * 获取 favicon 的备用 URL 列表（使用favicon.im通过CORS代理）
+   * 获取 favicon 的备用 URL 列表
+   * 首选自建 Supabase Edge Function（带 Storage 缓存 + CORS 头），失败再降级到公共代理。
    */
   private getFaviconUrls(originalUrl: string, domain: string): string[] {
-    return [
-      // 优先使用 allorigins 代理访问 favicon.im（稳定可靠）
-      `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://favicon.im/${domain}?larger=true&size=64`)}`,
-      `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://favicon.im/${domain}?larger=true&size=32`)}`,
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+    const edgeFunctionUrls = supabaseUrl
+      ? [
+          `${supabaseUrl}/functions/v1/favicon-service?domain=${encodeURIComponent(domain)}&size=64`,
+          `${supabaseUrl}/functions/v1/favicon-service?domain=${encodeURIComponent(domain)}&size=32`,
+        ]
+      : [];
 
-      // 备用：使用 corsproxy.io
+    return [
+      ...edgeFunctionUrls,
+
+      // Fallback：公共 CORS 代理（Edge Function 不可用时兜底）
+      `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://favicon.im/${domain}?larger=true&size=64`)}`,
       `https://corsproxy.io/?${encodeURIComponent(`https://favicon.im/${domain}?larger=true&size=64`)}`,
-      `https://corsproxy.io/?${encodeURIComponent(`https://favicon.im/${domain}?larger=true&size=32`)}`,
 
       // 最后使用原始 URL（如果提供）
       ...(originalUrl && !originalUrl.includes('favicon.im') ? [originalUrl] : []),

@@ -31,7 +31,8 @@
       "Bash(supabase functions deploy:*)",
       "Bash(curl:*)",
       "WebFetch(domain:developers.notion.com)",
-      "Bash(pnpm exec *)"
+      "Bash(pnpm exec *)",
+      "Bash(echo \"exit code: $?\")"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
