@@ -890,7 +890,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
             {/* 账号管理部分 - 现代化设计 */}
             <div id="account" ref={(el) => (sectionsRef.current['account'] = el)} className="space-y-5 select-none settings-section scroll-mt-6">
               <div className="flex items-center gap-3 select-none">
-                <div className="w-6 h-6 bg-gradient-to-br from-emerald-400 to-green-500 rounded-lg flex items-center justify-center">
+                <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
                   <i className="fa-solid fa-user text-white text-xs"></i>
                 </div>
                 <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100 select-none">账号管理</h3>
@@ -924,7 +924,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
 
             <div id="sync" ref={(el) => (sectionsRef.current['sync'] = el)} className="space-y-5 select-none settings-section scroll-mt-6">
               <div className="flex items-center gap-3 select-none">
-                <div className="w-6 h-6 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-lg flex items-center justify-center">
+                <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
                   <i className="fa-solid fa-cloud text-white text-xs"></i>
                 </div>
                 <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100 select-none">云端同步</h3>
@@ -963,13 +963,13 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                   <button
                     onClick={() => setAutoSyncEnabled(!autoSyncEnabled)}
                     className={`relative inline-flex h-7 w-12 items-center rounded-full transition-all duration-300 hover:scale-105 ${autoSyncEnabled
-                      ? 'bg-gradient-to-r from-blue-400 to-cyan-500 shadow-lg shadow-cyan-300/50'
+                      ? 'bg-gradient-to-r from-blue-500 to-blue-600 shadow-md shadow-blue-500/30'
                       : 'bg-gradient-to-r from-gray-400 to-gray-500 dark:from-gray-600 dark:to-gray-700 shadow-lg shadow-gray-300/50 dark:shadow-gray-900/50'
                       }`}
                   >
                     <span
                       className={`inline-block h-5 w-5 transform rounded-full bg-white dark:bg-gray-200 transition-all duration-300 shadow-md ${autoSyncEnabled
-                        ? 'translate-x-6 shadow-cyan-200'
+                        ? 'translate-x-6 shadow-blue-200'
                         : 'translate-x-1 shadow-gray-200 dark:shadow-gray-600'
                         }`}
                     />
@@ -1004,7 +1004,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                       <span className="select-none">3秒</span>
                       <span className="text-green-600 select-none">快速</span>
                       <span className="text-blue-600 select-none">平衡</span>
-                      <span className="text-purple-600 select-none">悠闲</span>
+                      <span className="text-blue-600 select-none">悠闲</span>
                       <span className="select-none">60秒</span>
                     </div>
                   </div>
@@ -1017,7 +1017,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                       <button
                         onClick={handleUploadToCloud}
                         disabled={isManualSyncing}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-400 to-cyan-500 text-white text-sm rounded-lg hover:from-blue-500 hover:to-cyan-600 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed transition-all duration-200 shadow-lg select-none"
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-sm rounded-lg hover:from-blue-600 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed transition-all duration-200 shadow-lg select-none"
                       >
                         <i
                           className={`fa-solid ${isManualSyncing ? 'fa-spinner fa-spin' : 'fa-cloud-upload-alt'} select-none`}
@@ -1029,7 +1029,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                       <button
                         onClick={handleDownloadFromCloud}
                         disabled={isManualSyncing}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-400 to-cyan-500 text-white text-sm rounded-lg hover:from-blue-500 hover:to-cyan-600 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed transition-all duration-200 shadow-lg select-none"
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-sm rounded-lg hover:from-blue-600 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed transition-all duration-200 shadow-lg select-none"
                       >
                         <i
                           className={`fa-solid ${isManualSyncing ? 'fa-spinner fa-spin' : 'fa-cloud-download-alt'} select-none`}
@@ -1058,7 +1058,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
 
             <div id="appearance" ref={(el) => (sectionsRef.current['appearance'] = el)} className="space-y-5 select-none settings-section scroll-mt-6">
               <div className="flex items-center gap-3 select-none">
-                <div className="w-6 h-6 bg-gradient-to-br from-purple-400 to-pink-500 rounded-lg flex items-center justify-center">
+                <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
                   <i className="fa-solid fa-palette text-white text-xs"></i>
                 </div>
                 <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100 select-none">外观设置</h3>
@@ -1176,7 +1176,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
             </div>
             <div id="theme" ref={(el) => (sectionsRef.current['theme'] = el)} className="space-y-5 select-none settings-section scroll-mt-6">
               <div className="flex items-center gap-3 select-none">
-                <div className="w-6 h-6 bg-gradient-to-br from-purple-400 to-pink-500 rounded-lg flex items-center justify-center">
+                <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
                   <i className="fa-solid fa-moon text-white text-xs"></i>
                 </div>
                 <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100 select-none">主题与显示</h3>
@@ -1205,13 +1205,13 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                         key={option.value}
                         onClick={() => setDarkModePreference(option.value as 'system' | 'on' | 'off' | 'scheduled')}
                         className={`group p-2 rounded-lg border-2 transition-all duration-200 text-center select-none cursor-pointer ${darkModePreference === option.value
-                          ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300'
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
                           : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:border-gray-300 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-600'
                           }`}
                       >
                         <i
                           className={`fa-solid ${option.icon} text-sm transition-colors ${darkModePreference === option.value
-                            ? 'text-indigo-500 dark:text-indigo-400'
+                            ? 'text-blue-500 dark:text-blue-400'
                             : 'text-gray-400 dark:text-gray-500 group-hover:text-gray-500 dark:group-hover:text-gray-400'
                             } select-none`}
                         ></i>
@@ -1237,7 +1237,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                           type="time"
                           value={darkModeScheduleStart}
                           onChange={(e) => setDarkModeScheduleStart(e.target.value)}
-                          className="px-2 py-1 text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                          className="px-2 py-1 text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                         />
                       </div>
                       <span className="text-gray-400">-</span>
@@ -1247,7 +1247,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                           type="time"
                           value={darkModeScheduleEnd}
                           onChange={(e) => setDarkModeScheduleEnd(e.target.value)}
-                          className="px-2 py-1 text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                          className="px-2 py-1 text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                         />
                       </div>
                     </div>
@@ -1272,13 +1272,13 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                   <button
                     onClick={() => setAnimationStyle(animationStyle === 'dynamic' ? 'simple' : 'dynamic')}
                     className={`relative inline-flex h-7 w-12 items-center rounded-full transition-all duration-300 hover:scale-105 ${animationStyle === 'dynamic'
-                      ? 'bg-gradient-to-r from-indigo-500 to-purple-600 shadow-lg shadow-purple-300/50'
+                      ? 'bg-gradient-to-r from-blue-500 to-blue-600 shadow-md shadow-blue-500/30'
                       : 'bg-gradient-to-r from-gray-400 to-gray-500 dark:from-gray-600 dark:to-gray-700 shadow-lg shadow-gray-300/50 dark:shadow-gray-900/50'
                       }`}
                   >
                     <span
                       className={`inline-block h-5 w-5 transform rounded-full bg-white dark:bg-gray-200 transition-all duration-300 shadow-md ${animationStyle === 'dynamic'
-                        ? 'translate-x-6 shadow-purple-200'
+                        ? 'translate-x-6 shadow-blue-200'
                         : 'translate-x-1 shadow-gray-200 dark:shadow-gray-600'
                         }`}
                     />
@@ -1304,7 +1304,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                     <button
                       onClick={() => setDarkOverlayMode('off')}
                       className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${darkOverlayMode === 'off'
-                        ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md'
+                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md'
                         : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                         }`}
                     >
@@ -1313,7 +1313,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                     <button
                       onClick={() => setDarkOverlayMode('always')}
                       className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${darkOverlayMode === 'always'
-                        ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md'
+                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md'
                         : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                         }`}
                     >
@@ -1322,7 +1322,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                     <button
                       onClick={() => setDarkOverlayMode('smart')}
                       className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${darkOverlayMode === 'smart'
-                        ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md'
+                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md'
                         : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                         }`}
                     >
@@ -1334,7 +1334,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
             </div>
             <div id="wallpaper" ref={(el) => (sectionsRef.current['wallpaper'] = el)} className="space-y-5 select-none settings-section scroll-mt-6">
               <div className="flex items-center gap-3 select-none">
-                <div className="w-6 h-6 bg-gradient-to-br from-pink-500 to-rose-600 rounded-lg flex items-center justify-center">
+                <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
                   <i className="fa-solid fa-image text-white text-xs"></i>
                 </div>
                 <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100 select-none">壁纸设置</h3>
@@ -1348,7 +1348,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                   <button
                     onClick={() => setWallpaperResolution(lastBingResolution)}
                     className={`relative flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium rounded-lg transition-colors duration-200 ${wallpaperResolution !== 'custom'
-                      ? 'text-pink-600 dark:text-pink-400'
+                      ? 'text-blue-600 dark:text-blue-400'
                       : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                       }`}
                   >
@@ -1367,7 +1367,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                   <button
                     onClick={() => setWallpaperResolution('custom')}
                     className={`relative flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium rounded-lg transition-colors duration-200 ${wallpaperResolution === 'custom'
-                      ? 'text-pink-600 dark:text-pink-400'
+                      ? 'text-blue-600 dark:text-blue-400'
                       : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                       }`}
                   >
@@ -1417,14 +1417,14 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                             key={option.value}
                             onClick={() => setWallpaperResolution(option.value as WallpaperResolution)}
                             className={`group p-3 rounded-lg border-2 transition-all duration-200 text-left select-none cursor-pointer ${wallpaperResolution === option.value
-                              ? 'border-pink-500 bg-pink-50 dark:bg-pink-900/30 text-pink-700 dark:text-pink-300'
+                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
                               : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:border-gray-300 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-600'
                               }`}
                           >
                             <div className="flex items-center gap-2 mb-1">
                               <i
                                 className={`fa-solid ${option.icon} text-sm transition-colors ${wallpaperResolution === option.value
-                                  ? 'text-pink-500 dark:text-pink-400'
+                                  ? 'text-blue-500 dark:text-blue-400'
                                   : 'text-gray-400 dark:text-gray-500 group-hover:text-gray-500 dark:group-hover:text-gray-400'
                                   } select-none`}
                               ></i>
@@ -1481,10 +1481,10 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                             className={`flex items-center justify-center gap-2 px-4 py-8 text-sm font-medium rounded-lg border-2 border-dashed transition-all w-full ${uploadingWallpaper
                               ? 'border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed'
                               : isDragOver
-                                ? 'border-pink-500 bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-300'
+                                ? 'border-blue-500 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
                                 : isGlobalDragOver
-                                  ? 'border-pink-400 bg-pink-50 dark:bg-pink-900/20 text-pink-600 dark:text-pink-400 animate-pulse'
-                                  : 'border-pink-300 dark:border-pink-700 bg-white dark:bg-gray-700 text-pink-600 dark:text-pink-400 hover:border-pink-400 dark:hover:border-pink-500 hover:bg-pink-50 dark:hover:bg-pink-900/20'
+                                  ? 'border-blue-400 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 animate-pulse'
+                                  : 'border-blue-300 dark:border-blue-700 bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20'
                               }`}
                           >
                             <div className="text-center space-y-2">
@@ -1514,7 +1514,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                       {wallpapers.length > 0 && (
                         <button
                           onClick={() => setShowWallpaperGallery(true)}
-                          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02]"
+                          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02]"
                         >
                           <i className="fa-solid fa-images"></i>
                           <span>管理壁纸库 ({wallpapers.length})</span>
@@ -1528,7 +1528,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
 
             <div id="features" ref={(el) => (sectionsRef.current['features'] = el)} className="space-y-5 select-none settings-section scroll-mt-6">
               <div className="flex items-center gap-3 select-none">
-                <div className="w-6 h-6 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
+                <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
                   <i className="fa-solid fa-cogs text-white text-xs"></i>
                 </div>
                 <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100 select-none">基础功能</h3>
@@ -1552,13 +1552,13 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                   <button
                     onClick={() => setParallaxEnabled(!parallaxEnabled)}
                     className={`relative inline-flex h-7 w-12 items-center rounded-full transition-all duration-300 hover:scale-105 ${parallaxEnabled
-                      ? 'bg-gradient-to-r from-indigo-500 to-purple-600 shadow-lg shadow-purple-300/50'
+                      ? 'bg-gradient-to-r from-blue-500 to-blue-600 shadow-md shadow-blue-500/30'
                       : 'bg-gradient-to-r from-gray-400 to-gray-500 dark:from-gray-600 dark:to-gray-700 shadow-lg shadow-gray-300/50 dark:shadow-gray-900/50'
                       }`}
                   >
                     <span
                       className={`inline-block h-5 w-5 transform rounded-full bg-white dark:bg-gray-200 transition-all duration-300 shadow-md ${parallaxEnabled
-                        ? 'translate-x-6 shadow-purple-200'
+                        ? 'translate-x-6 shadow-blue-200'
                         : 'translate-x-1 shadow-gray-200 dark:shadow-gray-600'
                         }`}
                     />
@@ -1583,13 +1583,13 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                   <button
                     onClick={() => setSearchInNewTab(!searchInNewTab)}
                     className={`relative inline-flex h-7 w-12 items-center rounded-full transition-all duration-300 hover:scale-105 ${searchInNewTab
-                      ? 'bg-gradient-to-r from-indigo-500 to-purple-600 shadow-lg shadow-purple-300/50'
+                      ? 'bg-gradient-to-r from-blue-500 to-blue-600 shadow-md shadow-blue-500/30'
                       : 'bg-gradient-to-r from-gray-400 to-gray-500 dark:from-gray-600 dark:to-gray-700 shadow-lg shadow-gray-300/50 dark:shadow-gray-900/50'
                       }`}
                   >
                     <span
                       className={`inline-block h-5 w-5 transform rounded-full bg-white dark:bg-gray-200 transition-all duration-300 shadow-md ${searchInNewTab
-                        ? 'translate-x-6 shadow-purple-200'
+                        ? 'translate-x-6 shadow-blue-200'
                         : 'translate-x-1 shadow-gray-200 dark:shadow-gray-600'
                         }`}
                     />
@@ -1614,13 +1614,13 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                   <button
                     onClick={() => setAutoSortEnabled(!autoSortEnabled)}
                     className={`relative inline-flex h-7 w-12 items-center rounded-full transition-all duration-300 hover:scale-105 ${autoSortEnabled
-                      ? 'bg-gradient-to-r from-indigo-500 to-purple-600 shadow-lg shadow-purple-300/50'
+                      ? 'bg-gradient-to-r from-blue-500 to-blue-600 shadow-md shadow-blue-500/30'
                       : 'bg-gradient-to-r from-gray-400 to-gray-500 dark:from-gray-600 dark:to-gray-700 shadow-lg shadow-gray-300/50 dark:shadow-gray-900/50'
                       }`}
                   >
                     <span
                       className={`inline-block h-5 w-5 transform rounded-full bg-white dark:bg-gray-200 transition-all duration-300 shadow-md ${autoSortEnabled
-                        ? 'translate-x-6 shadow-purple-200'
+                        ? 'translate-x-6 shadow-blue-200'
                         : 'translate-x-1 shadow-gray-200 dark:shadow-gray-600'
                         }`}
                     />
@@ -1631,7 +1631,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
 
             <div id="interaction" ref={(el) => (sectionsRef.current['interaction'] = el)} className="space-y-5 select-none settings-section scroll-mt-6">
               <div className="flex items-center gap-3 select-none">
-                <div className="w-6 h-6 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg flex items-center justify-center">
+                <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
                   <i className="fa-solid fa-wand-magic-sparkles text-white text-xs"></i>
                 </div>
                 <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100 select-none">交互体验</h3>
@@ -1667,7 +1667,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                     <button
                       onClick={() => setAtmosphereMode('auto')}
                       className={`px-2 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${atmosphereMode === 'auto'
-                        ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md'
+                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md'
                         : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                         }`}
                     >
@@ -1736,7 +1736,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                           </div>
                           <p className="text-xs text-gray-400 mt-0.5 select-none">过多的粒子会消耗更多性能哦</p>
                         </div>
-                        <span className="text-sm font-medium text-indigo-600">
+                        <span className="text-sm font-medium text-blue-600">
                           {Math.round(atmosphereParticleCount / 2)}
                         </span>
                       </div>
@@ -1772,13 +1772,13 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                       <button
                         onClick={() => setAtmosphereWindEnabled(!atmosphereWindEnabled)}
                         className={`relative inline-flex h-7 w-12 items-center rounded-full transition-all duration-300 hover:scale-105 ${atmosphereWindEnabled
-                          ? 'bg-gradient-to-r from-cyan-500 to-blue-600 shadow-lg shadow-cyan-300/50'
+                          ? 'bg-gradient-to-r from-blue-500 to-blue-600 shadow-md shadow-blue-500/30'
                           : 'bg-gradient-to-r from-gray-400 to-gray-500 dark:from-gray-600 dark:to-gray-700 shadow-lg shadow-gray-300/50 dark:shadow-gray-900/50'
                           }`}
                       >
                         <span
                           className={`inline-block h-5 w-5 transform rounded-full bg-white dark:bg-gray-200 transition-all duration-300 shadow-md ${atmosphereWindEnabled
-                            ? 'translate-x-6 shadow-cyan-200'
+                            ? 'translate-x-6 shadow-blue-200'
                             : 'translate-x-1 shadow-gray-200 dark:shadow-gray-600'
                             }`}
                         />
@@ -1806,7 +1806,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                     <button
                       onClick={() => setAiIconDisplayMode('circular')}
                       className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${aiIconDisplayMode === 'circular'
-                        ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md'
+                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md'
                         : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                         }`}
                     >
@@ -1816,7 +1816,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                     <button
                       onClick={() => setAiIconDisplayMode('dropdown')}
                       className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${aiIconDisplayMode === 'dropdown'
-                        ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md'
+                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md'
                         : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                         }`}
                     >
@@ -1829,7 +1829,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
             </div>
             <div id="time" ref={(el) => (sectionsRef.current['time'] = el)} className="space-y-5 select-none settings-section scroll-mt-6">
               <div className="flex items-center gap-3 select-none">
-                <div className="w-6 h-6 bg-gradient-to-br from-orange-400 to-yellow-500 rounded-lg flex items-center justify-center">
+                <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
                   <i className="fa-solid fa-clock text-white text-xs"></i>
                 </div>
                 <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100 select-none">时间设置</h3>
@@ -1842,7 +1842,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <i className="fa-solid fa-clock text-orange-500 text-sm"></i>
+                      <i className="fa-solid fa-clock text-blue-500 text-sm"></i>
                       <span className="text-sm font-medium text-gray-700 dark:text-gray-200 select-none">
                         显示时间组件
                       </span>
@@ -1854,13 +1854,13 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                   <button
                     onClick={() => setTimeComponentEnabled(!timeComponentEnabled)}
                     className={`relative inline-flex h-7 w-12 items-center rounded-full transition-all duration-300 hover:scale-105 ${timeComponentEnabled
-                      ? 'bg-gradient-to-r from-orange-400 to-yellow-500 shadow-lg shadow-orange-300/50'
+                      ? 'bg-gradient-to-r from-blue-500 to-blue-600 shadow-md shadow-blue-500/30'
                       : 'bg-gradient-to-r from-gray-400 to-gray-500 dark:from-gray-600 dark:to-gray-700 shadow-lg shadow-gray-300/50 dark:shadow-gray-900/50'
                       }`}
                   >
                     <span
                       className={`inline-block h-5 w-5 transform rounded-full bg-white dark:bg-gray-200 transition-all duration-300 shadow-md ${timeComponentEnabled
-                        ? 'translate-x-6 shadow-orange-200'
+                        ? 'translate-x-6 shadow-blue-200'
                         : 'translate-x-1 shadow-gray-200 dark:shadow-gray-600'
                         }`}
                     />
@@ -1874,7 +1874,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                     {/* 年月日独立开关 */}
                     <div className="space-y-4">
                       <div className="flex items-center gap-2">
-                        <i className="fa-solid fa-calendar text-orange-500 text-sm"></i>
+                        <i className="fa-solid fa-calendar text-blue-500 text-sm"></i>
                         <span className="text-sm font-medium text-gray-700 dark:text-gray-200 select-none">
                           日期显示控制
                         </span>
@@ -1886,13 +1886,13 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                           <button
                             onClick={() => setShowYear(!showYear)}
                             className={`w-full p-3 rounded-lg border-2 transition-all duration-200 text-center select-none cursor-pointer ${showYear
-                              ? 'border-orange-400 bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300'
+                              ? 'border-blue-400 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
                               : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:border-gray-300 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-600'
                               }`}
                           >
                             <div className="flex items-center justify-center gap-2 mb-1">
                               <i
-                                className={`fa-solid fa-calendar-alt text-sm transition-colors ${showYear ? 'text-orange-400' : 'text-gray-400'
+                                className={`fa-solid fa-calendar-alt text-sm transition-colors ${showYear ? 'text-blue-400' : 'text-gray-400'
                                   } select-none`}
                               ></i>
                               <div className="font-medium text-sm select-none">年份</div>
@@ -1906,13 +1906,13 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                           <button
                             onClick={() => setShowMonth(!showMonth)}
                             className={`w-full p-3 rounded-lg border-2 transition-all duration-200 text-center select-none cursor-pointer ${showMonth
-                              ? 'border-orange-400 bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300'
+                              ? 'border-blue-400 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
                               : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:border-gray-300 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-600'
                               }`}
                           >
                             <div className="flex items-center justify-center gap-2 mb-1">
                               <i
-                                className={`fa-solid fa-calendar-check text-sm transition-colors ${showMonth ? 'text-orange-400' : 'text-gray-400'
+                                className={`fa-solid fa-calendar-check text-sm transition-colors ${showMonth ? 'text-blue-400' : 'text-gray-400'
                                   } select-none`}
                               ></i>
                               <div className="font-medium text-sm select-none">月份</div>
@@ -1926,13 +1926,13 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                           <button
                             onClick={() => setShowDay(!showDay)}
                             className={`w-full p-3 rounded-lg border-2 transition-all duration-200 text-center select-none cursor-pointer ${showDay
-                              ? 'border-orange-400 bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300'
+                              ? 'border-blue-400 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
                               : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:border-gray-300 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-600'
                               }`}
                           >
                             <div className="flex items-center justify-center gap-2 mb-1">
                               <i
-                                className={`fa-solid fa-calendar-day text-sm transition-colors ${showDay ? 'text-orange-400' : 'text-gray-400'
+                                className={`fa-solid fa-calendar-day text-sm transition-colors ${showDay ? 'text-blue-400' : 'text-gray-400'
                                   } select-none`}
                               ></i>
                               <div className="font-medium text-sm select-none">日期</div>
@@ -1949,7 +1949,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <i className="fa-solid fa-calendar-week text-orange-500 text-sm"></i>
+                          <i className="fa-solid fa-calendar-week text-blue-500 text-sm"></i>
                           <span className="text-sm font-medium text-gray-700 dark:text-gray-200 select-none">
                             显示星期
                           </span>
@@ -1961,13 +1961,13 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                       <button
                         onClick={() => setShowWeekday(!showWeekday)}
                         className={`relative inline-flex h-7 w-12 items-center rounded-full transition-all duration-300 hover:scale-105 ${showWeekday
-                          ? 'bg-gradient-to-r from-orange-400 to-yellow-500 shadow-lg shadow-orange-300/50'
+                          ? 'bg-gradient-to-r from-blue-500 to-blue-600 shadow-md shadow-blue-500/30'
                           : 'bg-gradient-to-r from-gray-400 to-gray-500 dark:from-gray-600 dark:to-gray-700 shadow-lg shadow-gray-300/50 dark:shadow-gray-900/50'
                           }`}
                       >
                         <span
                           className={`inline-block h-5 w-5 transform rounded-full bg-white dark:bg-gray-200 transition-all duration-300 shadow-md ${showWeekday
-                            ? 'translate-x-6 shadow-orange-200'
+                            ? 'translate-x-6 shadow-blue-200'
                             : 'translate-x-1 shadow-gray-200 dark:shadow-gray-600'
                             }`}
                         />
@@ -1980,7 +1980,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <i className="fa-solid fa-stopwatch text-orange-500 text-sm"></i>
+                          <i className="fa-solid fa-stopwatch text-blue-500 text-sm"></i>
                           <span className="text-sm font-medium text-gray-700 dark:text-gray-200 select-none">
                             精确到秒
                           </span>
@@ -1992,13 +1992,13 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                       <button
                         onClick={() => setShowSeconds(!showSeconds)}
                         className={`relative inline-flex h-7 w-12 items-center rounded-full transition-all duration-300 hover:scale-105 ${showSeconds
-                          ? 'bg-gradient-to-r from-orange-400 to-yellow-500 shadow-lg shadow-orange-300/50'
+                          ? 'bg-gradient-to-r from-blue-500 to-blue-600 shadow-md shadow-blue-500/30'
                           : 'bg-gradient-to-r from-gray-400 to-gray-500 dark:from-gray-600 dark:to-gray-700 shadow-lg shadow-gray-300/50 dark:shadow-gray-900/50'
                           }`}
                       >
                         <span
                           className={`inline-block h-5 w-5 transform rounded-full bg-white dark:bg-gray-200 transition-all duration-300 shadow-md ${showSeconds
-                            ? 'translate-x-6 shadow-orange-200'
+                            ? 'translate-x-6 shadow-blue-200'
                             : 'translate-x-1 shadow-gray-200 dark:shadow-gray-600'
                             }`}
                         />
@@ -2012,7 +2012,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <i className="fa-solid fa-hourglass-half text-orange-500 text-sm"></i>
+                            <i className="fa-solid fa-hourglass-half text-blue-500 text-sm"></i>
                             <span className="text-sm font-medium text-gray-700 dark:text-gray-200 select-none">
                               下班倒计时
                             </span>
@@ -2026,13 +2026,13 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                         <button
                           onClick={() => setWorkCountdownEnabled(!workCountdownEnabled)}
                           className={`relative inline-flex h-7 w-12 items-center rounded-full transition-all duration-300 hover:scale-105 ${workCountdownEnabled
-                            ? 'bg-gradient-to-r from-orange-400 to-yellow-500 shadow-lg shadow-orange-300/50'
+                            ? 'bg-gradient-to-r from-blue-500 to-blue-600 shadow-md shadow-blue-500/30'
                             : 'bg-gradient-to-r from-gray-400 to-gray-500 dark:from-gray-600 dark:to-gray-700 shadow-lg shadow-gray-300/50 dark:shadow-gray-900/50'
                             }`}
                         >
                           <span
                             className={`inline-block h-5 w-5 transform rounded-full bg-white dark:bg-gray-200 transition-all duration-300 shadow-md ${workCountdownEnabled
-                              ? 'translate-x-6 shadow-orange-200'
+                              ? 'translate-x-6 shadow-blue-200'
                               : 'translate-x-1 shadow-gray-200 dark:shadow-gray-600'
                               }`}
                           />
@@ -2047,7 +2047,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                               type="time"
                               value={lunchTime}
                               onChange={(e) => setLunchTime(e.target.value)}
-                              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                             />
                           </div>
                           <div className="space-y-2">
@@ -2056,7 +2056,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                               type="time"
                               value={offWorkTime}
                               onChange={(e) => setOffWorkTime(e.target.value)}
-                              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                             />
                           </div>
                         </div>
@@ -2070,7 +2070,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
 
             <div id="cards" ref={(el) => (sectionsRef.current['cards'] = el)} className="space-y-5 select-none settings-section scroll-mt-6">
               <div className="flex items-center gap-3 select-none">
-                <div className="w-6 h-6 bg-gradient-to-br from-violet-500 to-purple-600 rounded-lg flex items-center justify-center">
+                <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
                   <i className="fa-solid fa-layer-group text-white text-xs"></i>
                 </div>
                 <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100 select-none">卡片管理</h3>
@@ -2079,22 +2079,20 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
 
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
                 <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-violet-500 rounded-lg flex items-center justify-center">
-                      <i className="fa-solid fa-layer-group text-white text-sm"></i>
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <i className="fa-solid fa-layer-group text-blue-500 text-sm"></i>
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-200 select-none">卡片收藏</span>
                     </div>
-                    <div>
-                      <div className="text-sm font-medium text-gray-800 dark:text-gray-100 select-none">卡片收藏</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400 select-none">
-                        当前有 {websites.length} 个卡片
-                      </div>
-                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 select-none">
+                      当前有 {websites.length} 个卡片
+                    </p>
                   </div>
                 </div>
 
                 <button
                   onClick={() => setShowAddCardModal(true)}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-b from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02] select-none"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02] select-none"
                 >
                   <i className="fa-solid fa-plus select-none"></i>
                   <span className="select-none">添加新卡片</span>
@@ -2104,7 +2102,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
 
             <div id="data" ref={(el) => (sectionsRef.current['data'] = el)} className="space-y-5 select-none settings-section scroll-mt-6">
               <div className="flex items-center gap-3 select-none">
-                <div className="w-6 h-6 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center">
+                <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
                   <i className="fa-solid fa-database text-white text-xs"></i>
                 </div>
                 <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100 select-none">数据管理</h3>
@@ -2112,14 +2110,30 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
               </div>
 
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 space-y-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center">
-                    <i className="fa-solid fa-database text-white text-sm"></i>
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <i className="fa-solid fa-chart-simple text-blue-500 text-sm"></i>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-200 select-none">使用统计</span>
                   </div>
-                  <div>
-                    <div className="text-sm font-medium text-gray-800 dark:text-gray-100 select-none">备份与恢复</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 select-none">导出或导入您的数据</div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 select-none">查看您的使用数据</p>
+                </div>
+
+                <button
+                  onClick={() => setShowUserStatsModal(true)}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-md shadow-blue-500/25 hover:shadow-lg hover:shadow-blue-500/30 hover:scale-[1.02] select-none"
+                >
+                  <i className="fa-solid fa-chart-simple select-none"></i>
+                  <span className="select-none">查看使用统计</span>
+                </button>
+
+                <div className="border-t border-gray-100 dark:border-gray-700"></div>
+
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <i className="fa-solid fa-database text-blue-500 text-sm"></i>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-200 select-none">备份与恢复</span>
                   </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 select-none">导出或导入您的数据</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 select-none">
@@ -2128,7 +2142,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                     disabled={isExporting}
                     className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 select-none ${isExporting
                       ? 'bg-gray-400 cursor-not-allowed text-white shadow-lg shadow-gray-400/30'
-                      : 'bg-gradient-to-b from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:shadow-emerald-600/40 hover:scale-[1.02]'
+                      : 'bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-md shadow-blue-500/25 hover:shadow-lg hover:shadow-blue-500/30 hover:scale-[1.02]'
                       }`}
                   >
                     {isExporting ? (
@@ -2149,7 +2163,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                     disabled={isImporting}
                     className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 select-none ${isImporting
                       ? 'bg-gray-400 cursor-not-allowed text-white shadow-lg shadow-gray-400/30'
-                      : 'bg-gradient-to-b from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:shadow-emerald-600/40 hover:scale-[1.02]'
+                      : 'bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-md shadow-blue-500/25 hover:shadow-lg hover:shadow-blue-500/30 hover:scale-[1.02]'
                       }`}
                   >
                     {isImporting ? (
@@ -2174,14 +2188,14 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                   className="hidden"
                 />
 
-                <div className="bg-teal-50 dark:bg-teal-900/30 border border-teal-200 dark:border-teal-800 rounded-lg p-3 select-none">
+                <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3 select-none">
                   <div className="flex items-start gap-2 select-none">
-                    <i className="fa-solid fa-exclamation-triangle text-teal-500 dark:text-teal-400 text-sm mt-0.5 select-none"></i>
+                    <i className="fa-solid fa-exclamation-triangle text-blue-500 dark:text-blue-400 text-sm mt-0.5 select-none"></i>
                     <div className="select-none">
-                      <div className="text-xs font-medium text-teal-700 dark:text-teal-300 mb-1 select-none">
+                      <div className="text-xs font-medium text-blue-700 dark:text-blue-300 mb-1 select-none">
                         重要提醒
                       </div>
-                      <div className="text-xs text-teal-600 dark:text-teal-400 select-none">
+                      <div className="text-xs text-blue-600 dark:text-blue-400 select-none">
                         导入会覆盖所有当前数据，建议先导出备份
                       </div>
                     </div>
@@ -2192,7 +2206,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
 
             <div id="privacy" ref={(el) => (sectionsRef.current['privacy'] = el)} className="space-y-5 select-none settings-section scroll-mt-6">
               <div className="flex items-center gap-3 select-none">
-                <div className="w-6 h-6 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
                   <i className="fa-solid fa-shield-halved text-white text-xs"></i>
                 </div>
                 <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100 select-none">隐私与帮助</h3>
@@ -2200,33 +2214,21 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
               </div>
 
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 space-y-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center">
-                    <i className="fa-solid fa-shield-halved text-white text-sm"></i>
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <i className="fa-solid fa-shield-halved text-blue-500 text-sm"></i>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-200 select-none">隐私与帮助</span>
                   </div>
-                  <div>
-                    <div className="text-sm font-medium text-gray-800 dark:text-gray-100 select-none">隐私与帮助</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 select-none">
-                      管理隐私设置和查看使用教程
-                    </div>
-                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 select-none">管理隐私设置和查看使用教程</p>
                 </div>
 
                 <div className="grid grid-cols-1 gap-3">
                   <button
                     onClick={() => setShowPrivacySettings(true)}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-b from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02] select-none"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02] select-none"
                   >
                     <i className="fa-solid fa-shield-halved select-none"></i>
                     <span className="select-none">隐私设置</span>
-                  </button>
-
-                  <button
-                    onClick={() => setShowUserStatsModal(true)}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-b from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02] select-none"
-                  >
-                    <i className="fa-solid fa-chart-simple select-none"></i>
-                    <span className="select-none">查看使用统计</span>
                   </button>
 
                   <a
@@ -2250,7 +2252,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                       <button
                         onClick={handleFixIcons}
                         disabled={isFixingIcons}
-                        className="text-purple-500 hover:text-purple-600 underline ml-1 disabled:text-gray-400 disabled:no-underline"
+                        className="text-blue-500 hover:text-blue-600 underline ml-1 disabled:text-gray-400 disabled:no-underline"
                       >
                         点击修复
                       </button>
@@ -2357,7 +2359,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
               {/* 标题栏 */}
               <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-pink-500 to-rose-600 rounded-xl flex items-center justify-center">
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
                     <i className="fa-solid fa-images text-white"></i>
                   </div>
                   <div>
@@ -2386,7 +2388,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                       <motion.div
                         key={wallpaper.metadata.id}
                         className={`relative group rounded-xl overflow-hidden border-2 transition-all duration-200 ${wallpaper.isActive
-                          ? 'border-pink-500 shadow-lg shadow-pink-200 dark:shadow-pink-900/50'
+                          ? 'border-blue-500 shadow-lg shadow-blue-200 dark:shadow-blue-900/50'
                           : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                           }`}
                         whileHover={{ scale: 1.02 }}
@@ -2402,7 +2404,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
 
                           {/* 当前使用指示器 */}
                           {wallpaper.isActive && (
-                            <div className="absolute top-2 right-2 bg-pink-500 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                            <div className="absolute top-2 right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
                               <i className="fa-solid fa-check"></i>
                               <span>使用中</span>
                             </div>
@@ -2423,7 +2425,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                             {!wallpaper.isActive && (
                               <button
                                 onClick={() => handleSelectWallpaper(wallpaper.metadata.id)}
-                                className="w-10 h-10 bg-pink-500 rounded-full flex items-center justify-center text-white hover:bg-pink-600 transition-colors"
+                                className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white hover:bg-blue-600 transition-colors"
                                 title="使用此壁纸"
                               >
                                 <i className="fa-solid fa-check"></i>
@@ -2576,7 +2578,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
               {/* 标题栏 */}
               <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg flex items-center justify-center shadow-sm">
+                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-sm">
                     <i className="fa-solid fa-chart-pie text-white text-sm"></i>
                   </div>
                   <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">使用统计</h3>
