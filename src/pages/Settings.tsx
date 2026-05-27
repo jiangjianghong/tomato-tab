@@ -27,6 +27,7 @@ import {
 import { useDataManager } from '@/hooks/useDataManager';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { faviconCache } from '@/lib/faviconCache';
+import SmoothSlider from '@/components/SmoothSlider';
 
 interface SettingsProps {
   onClose: () => void;
@@ -989,17 +990,15 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                     <p className="text-xs text-gray-500 dark:text-gray-400 select-none">
                       数据变化后等待此时间再同步，避免频繁请求。关闭设置或保存卡片时会立即同步。
                     </p>
-                    <input
-                      type="range"
-                      min="3"
-                      max="60"
-                      step="1"
+                    <SmoothSlider
+                      min={3}
+                      max={60}
+                      step={1}
                       value={autoSyncInterval}
-                      onChange={(e) => setAutoSyncInterval(parseInt(e.target.value))}
-                      className="w-full h-2 bg-gradient-to-r from-blue-200 to-blue-300 rounded-lg appearance-none cursor-pointer"
-                      style={{
-                        background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((autoSyncInterval - 3) / 57) * 100}%, #e2e8f0 ${((autoSyncInterval - 3) / 57) * 100}%, #e2e8f0 100%)`,
-                      }}
+                      onChange={(v) => setAutoSyncInterval(v)}
+                      darkMode={darkMode}
+                      className="w-full appearance-none cursor-pointer"
+                      ariaLabel="自动同步间隔（秒）"
                     />
                     <div className="flex justify-between text-xs text-gray-400 dark:text-gray-500 select-none">
                       <span className="select-none">3秒</span>
@@ -1081,17 +1080,15 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                       {Math.round(searchBarOpacity * 100)}%
                     </span>
                   </div>
-                  <input
-                    type="range"
-                    min="0.05"
-                    max="0.5"
-                    step="0.01"
+                  <SmoothSlider
+                    min={0.05}
+                    max={0.5}
+                    step={0.01}
                     value={searchBarOpacity}
-                    onChange={(e) => setSearchBarOpacity(parseFloat(e.target.value))}
-                    className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer"
-                    style={{
-                      background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((searchBarOpacity - 0.05) / 0.45) * 100}%, ${darkMode ? '#374151' : '#e2e8f0'} ${((searchBarOpacity - 0.05) / 0.45) * 100}%, ${darkMode ? '#374151' : '#e2e8f0'} 100%)`,
-                    }}
+                    onChange={(v) => setSearchBarOpacity(v)}
+                    darkMode={darkMode}
+                    className="w-full appearance-none cursor-pointer"
+                    ariaLabel="搜索栏不透明度"
                   />
                   <div className="flex justify-between text-xs text-gray-400 dark:text-gray-500 select-none">
                     <span className="select-none">5%</span>
@@ -1123,20 +1120,15 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                       {searchBarBorderRadius >= 50 ? '全圆角' : `${searchBarBorderRadius}px`}
                     </span>
                   </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="50"
-                    step="1"
+                  <SmoothSlider
+                    min={0}
+                    max={50}
+                    step={1}
                     value={searchBarBorderRadius >= 50 ? 50 : searchBarBorderRadius}
-                    onChange={(e) => {
-                      const value = parseInt(e.target.value);
-                      setSearchBarBorderRadius(value === 50 ? 9999 : value);
-                    }}
-                    className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer"
-                    style={{
-                      background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${(Math.min(searchBarBorderRadius, 50) / 50) * 100}%, ${darkMode ? '#374151' : '#e2e8f0'} ${(Math.min(searchBarBorderRadius, 50) / 50) * 100}%, ${darkMode ? '#374151' : '#e2e8f0'} 100%)`,
-                    }}
+                    onChange={(v) => setSearchBarBorderRadius(v === 50 ? 9999 : v)}
+                    darkMode={darkMode}
+                    className="w-full appearance-none cursor-pointer"
+                    ariaLabel="搜索栏圆角"
                   />
                   <div className="flex justify-between text-xs text-gray-400 select-none">
                     <span className="select-none">直角</span>
@@ -1158,17 +1150,15 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                       {Math.round(cardOpacity * 100)}%
                     </span>
                   </div>
-                  <input
-                    type="range"
-                    min="0.05"
-                    max="0.5"
-                    step="0.01"
+                  <SmoothSlider
+                    min={0.05}
+                    max={0.5}
+                    step={0.01}
                     value={cardOpacity}
-                    onChange={(e) => setCardOpacity(parseFloat(e.target.value))}
-                    className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer"
-                    style={{
-                      background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((cardOpacity - 0.05) / 0.45) * 100}%, ${darkMode ? '#374151' : '#e2e8f0'} ${((cardOpacity - 0.05) / 0.45) * 100}%, ${darkMode ? '#374151' : '#e2e8f0'} 100%)`,
-                    }}
+                    onChange={(v) => setCardOpacity(v)}
+                    darkMode={darkMode}
+                    className="w-full appearance-none cursor-pointer"
+                    ariaLabel="卡片不透明度"
                   />
                   <div className="flex justify-between text-xs text-gray-400 dark:text-gray-500 select-none">
                     <span className="select-none">5%</span>
@@ -1750,14 +1740,15 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                           {Math.round(atmosphereParticleCount / 2)}
                         </span>
                       </div>
-                      <input
-                        type="range"
-                        min="1"
-                        max="100"
-                        step="1"
+                      <SmoothSlider
+                        min={1}
+                        max={100}
+                        step={1}
                         value={Math.round(atmosphereParticleCount / 2)}
-                        onChange={(e) => setAtmosphereParticleCount(parseInt(e.target.value, 10) * 2)}
-                        className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer"
+                        onChange={(v) => setAtmosphereParticleCount(v * 2)}
+                        darkMode={darkMode}
+                        className="w-full appearance-none cursor-pointer"
+                        ariaLabel="氛围粒子数量"
                       />
                       <div className="flex justify-between text-xs text-gray-400">
                         <span>1</span>

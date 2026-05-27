@@ -225,58 +225,17 @@ button,
   background: #2563eb;
 }
 
-/* 通用 range input 深色模式样式 */
-input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: #3b82f6;
-  cursor: pointer;
-  border: 2px solid white;
-  box-shadow: 0 2px 4px rgb(0 0 0 / 20%);
-}
-
+/* 深色模式下 thumb 配色覆盖（track 颜色由组件通过 --range-fill 注入） */
 .dark input[type="range"]::-webkit-slider-thumb {
   background: #60a5fa;
   border: 2px solid #9ca3af;
   box-shadow: 0 2px 4px rgb(0 0 0 / 40%);
 }
 
-input[type="range"]::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: #3b82f6;
-  cursor: pointer;
-  border: 2px solid white;
-  box-shadow: 0 2px 4px rgb(0 0 0 / 20%);
-}
-
 .dark input[type="range"]::-moz-range-thumb {
   background: #60a5fa;
   border: 2px solid #9ca3af;
   box-shadow: 0 2px 4px rgb(0 0 0 / 40%);
-}
-
-/* 滑轨 track 样式 */
-input[type="range"]::-webkit-slider-runnable-track {
-  height: 8px;
-  border-radius: 4px;
-}
-
-.dark input[type="range"]::-webkit-slider-runnable-track {
-  background: #374151;
-}
-
-input[type="range"]::-moz-range-track {
-  height: 8px;
-  border-radius: 4px;
-}
-
-.dark input[type="range"]::-moz-range-track {
-  background: #374151;
 }
 
 .slider::-moz-range-thumb {
@@ -320,31 +279,36 @@ input[type="range"]::-moz-range-track {
   background: linear-gradient(to bottom, rgb(59 130 246 / 60%), rgb(99 102 241 / 60%));
 }
 
-/* 现代化滑块样式 */
+/* 现代化滑块样式 —— track 8px / thumb 18px，thumb 通过负 margin-top 居中到 track 中线 */
 input[type='range'] {
-  appearance: none;
+  -webkit-appearance: none;
   appearance: none;
   background: transparent;
   cursor: pointer;
+  /* 让 input 自身有足够高度容纳放大后的 thumb，避免 hover 缩放被裁切 */
+  height: 24px;
 }
 
-input[type='range']::-webkit-slider-track {
-  height: 12px;
-  border-radius: 6px;
-  background: #e2e8f0;
+/* track 背景由 CSS 变量驱动，组件通过 style 注入 --range-fill 渐变 */
+input[type='range']::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--range-fill, #e2e8f0);
 }
 
 input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
   appearance: none;
-  appearance: none;
-  height: 20px;
-  width: 20px;
+  height: 18px;
+  width: 18px;
   border-radius: 50%;
   background: linear-gradient(135deg, #3b82f6, #6366f1);
   border: 3px solid white;
   box-shadow: 0 4px 12px rgb(59 130 246 / 40%);
   cursor: pointer;
-  transition: all 0.3s ease;
+  /* (track 8 - thumb 18) / 2 = -5px，将 thumb 上移到 track 垂直中心 */
+  margin-top: -5px;
+  transition: transform 0.15s ease, box-shadow 0.3s ease;
 }
 
 input[type='range']::-webkit-slider-thumb:hover {
@@ -353,21 +317,21 @@ input[type='range']::-webkit-slider-thumb:hover {
 }
 
 input[type='range']::-moz-range-track {
-  height: 12px;
-  border-radius: 6px;
-  background: #e2e8f0;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--range-fill, #e2e8f0);
   border: none;
 }
 
 input[type='range']::-moz-range-thumb {
-  height: 20px;
-  width: 20px;
+  height: 18px;
+  width: 18px;
   border-radius: 50%;
   background: linear-gradient(135deg, #3b82f6, #6366f1);
   border: 3px solid white;
   box-shadow: 0 4px 12px rgb(59 130 246 / 40%);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: transform 0.15s ease, box-shadow 0.3s ease;
 }
 
 input[type='range']::-moz-range-thumb:hover {
@@ -542,12 +506,14 @@ input[type='range']::-moz-range-thumb:hover {
     height: 44px;
     padding: 8px 0;
   }
-  
+
   input[type="range"]::-webkit-slider-thumb {
     width: 24px;
     height: 24px;
+    /* (track 8 - thumb 24) / 2 = -8px */
+    margin-top: -8px;
   }
-  
+
   input[type="range"]::-moz-range-thumb {
     width: 24px;
     height: 24px;

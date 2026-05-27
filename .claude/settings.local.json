@@ -34,7 +34,8 @@
       "Bash(pnpm exec *)",
       "Bash(echo \"exit code: $?\")",
       "Bash(echo \"exit: $?\")",
-      "Bash(pnpm build:client)"
+      "Bash(pnpm build:client)",
+      "Bash(npx eslint *)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
