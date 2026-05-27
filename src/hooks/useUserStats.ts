@@ -30,6 +30,12 @@ export interface UserStats {
 
   // 首次使用日期
   firstUseDate: string;
+
+  // 24 小时活跃分布（索引 = 小时），仅本地累计
+  hourlyDistribution: number[];
+
+  // 连续使用天数（基于自然日跨天判断），仅本地累计
+  streakDays: number;
 }
 
 const STATS_KEY = 'user-stats';
@@ -37,6 +43,13 @@ const SYNC_DEBOUNCE_MS = 5000; // 5秒防抖，避免频繁同步
 
 // 获取今天的日期字符串
 const getTodayString = () => new Date().toISOString().split('T')[0];
+
+// 获取昨天的日期字符串（用于 streak 连续判定）
+const getYesterdayString = () => {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return d.toISOString().split('T')[0];
+};
 
 // 默认统计数据
 const getDefaultStats = (): UserStats => ({
@@ -49,6 +62,8 @@ const getDefaultStats = (): UserStats => ({
   lastVisitDate: getTodayString(),
   cardClicks: {},
   firstUseDate: getTodayString(),
+  hourlyDistribution: new Array(24).fill(0),
+  streakDays: 1,
 });
 
 // 加载本地统计数据
@@ -56,18 +71,39 @@ const loadLocalStats = (): UserStats => {
   try {
     const saved = storageManager.getItem(STATS_KEY, false);
     if (saved) {
-      const parsed = JSON.parse(saved) as UserStats;
-      // 检查是否是新的一天，重置今日统计
+      const parsed = JSON.parse(saved) as Partial<UserStats>;
+      // 旧数据兼容：补齐新增字段的默认值
+      const hourlyDistribution =
+        Array.isArray(parsed.hourlyDistribution) && parsed.hourlyDistribution.length === 24
+          ? parsed.hourlyDistribution
+          : new Array(24).fill(0);
+      let streakDays = typeof parsed.streakDays === 'number' && parsed.streakDays > 0 ? parsed.streakDays : 1;
+
+      const base: UserStats = {
+        ...getDefaultStats(),
+        ...parsed,
+        hourlyDistribution,
+        streakDays,
+      };
+
+      // 检查是否是新的一天，重置今日统计并更新 streak
       const today = getTodayString();
-      if (parsed.lastVisitDate !== today) {
+      if (base.lastVisitDate !== today) {
+        if (base.lastVisitDate === getYesterdayString()) {
+          streakDays = base.streakDays + 1;
+        } else {
+          // 跨天断了
+          streakDays = 1;
+        }
         return {
-          ...parsed,
+          ...base,
           todaySiteVisits: 0,
           todaySearches: 0,
           lastVisitDate: today,
+          streakDays,
         };
       }
-      return parsed;
+      return base;
     }
   } catch (error) {
     console.error('加载用户统计失败:', error);
@@ -101,6 +137,9 @@ const fromCloudFormat = (cloud: UserStatsData, local: UserStats): UserStats => (
   ...cloud,
   todaySiteVisits: local.todaySiteVisits, // 今日数据只保存在本地
   todaySearches: local.todaySearches,
+  // 24h 分布与连续天数不上云，保留本地值（避免被云端覆盖丢失）
+  hourlyDistribution: local.hourlyDistribution,
+  streakDays: local.streakDays,
 });
 
 // 用户统计 Hook（支持云同步）
@@ -227,10 +266,14 @@ export const useUserStats = () => {
   const recordSiteVisit = useCallback(
     () => {
       setStats((prev) => {
+        const hour = new Date().getHours();
+        const hourlyDistribution = [...(prev.hourlyDistribution || new Array(24).fill(0))];
+        hourlyDistribution[hour] = (hourlyDistribution[hour] || 0) + 1;
         const newStats = {
           ...prev,
           totalSiteVisits: prev.totalSiteVisits + 1,
           todaySiteVisits: prev.todaySiteVisits + 1,
+          hourlyDistribution,
         };
         saveLocalStats(newStats);
         syncToCloud(newStats);
@@ -243,10 +286,14 @@ export const useUserStats = () => {
   // 记录搜索
   const recordSearch = useCallback(() => {
     setStats((prev) => {
+      const hour = new Date().getHours();
+      const hourlyDistribution = [...(prev.hourlyDistribution || new Array(24).fill(0))];
+      hourlyDistribution[hour] = (hourlyDistribution[hour] || 0) + 1;
       const newStats = {
         ...prev,
         totalSearches: prev.totalSearches + 1,
         todaySearches: prev.todaySearches + 1,
+        hourlyDistribution,
       };
       saveLocalStats(newStats);
       syncToCloud(newStats);
@@ -367,6 +414,11 @@ class UserStatsManager {
 
   recordSiteVisit(cardId?: string) {
     this.refreshStats();
+    const hour = new Date().getHours();
+    if (!Array.isArray(this.stats.hourlyDistribution) || this.stats.hourlyDistribution.length !== 24) {
+      this.stats.hourlyDistribution = new Array(24).fill(0);
+    }
+    this.stats.hourlyDistribution[hour] = (this.stats.hourlyDistribution[hour] || 0) + 1;
     this.stats.totalSiteVisits += 1;
     this.stats.todaySiteVisits += 1;
     if (cardId) {
@@ -377,6 +429,11 @@ class UserStatsManager {
 
   recordSearch() {
     this.refreshStats();
+    const hour = new Date().getHours();
+    if (!Array.isArray(this.stats.hourlyDistribution) || this.stats.hourlyDistribution.length !== 24) {
+      this.stats.hourlyDistribution = new Array(24).fill(0);
+    }
+    this.stats.hourlyDistribution[hour] = (this.stats.hourlyDistribution[hour] || 0) + 1;
     this.stats.totalSearches += 1;
     this.stats.todaySearches += 1;
     saveLocalStats(this.stats);

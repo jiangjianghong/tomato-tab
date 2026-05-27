@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { useTransparency } from '@/contexts/TransparencyContext';
+import TomatoIcon from '@/components/TomatoIcon';
 
 interface DragPlaceholderProps {
   isActive: boolean;
@@ -38,21 +39,23 @@ export function DragPlaceholder({ isActive }: DragPlaceholderProps) {
         },
       }}
     >
-      {/* 占位内容 */}
-      <div className="h-full flex items-center justify-center opacity-60">
+      {/* 占位内容：呼吸番茄，暗示「等待落位」 */}
+      <div className="h-full flex items-center justify-center">
         <motion.div
           animate={{
-            scale: [1, 1.1, 1],
-            opacity: [0.3, 0.6, 0.3],
+            scale: [1, 1.12, 1],
+            opacity: [0.45, 0.85, 0.45],
           }}
           transition={{
             duration: 1.5,
             repeat: Infinity,
             ease: 'easeInOut',
           }}
-          className="w-8 h-8 rounded-full border-2 border-white/50"
-        />
+        >
+          <TomatoIcon size={32} variant="static" />
+        </motion.div>
       </div>
     </motion.div>
   );
 }
+

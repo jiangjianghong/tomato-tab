@@ -151,21 +151,30 @@ class FaviconCacheManager {
 
   /**
    * 获取 favicon 的备用 URL 列表
-   * 首选自建 Supabase Edge Function（带 Storage 缓存 + CORS 头），失败再降级到公共代理。
+   * 优先级：
+   *  1. Supabase Storage 公开 URL（CDN 直出，无 Function 调用，最快）
+   *  2. Supabase Edge Function（拉源 + 写 Storage，首次访问走这条）
+   *  3. 公共 CORS 代理（自家服务不可用时兜底）
    */
   private getFaviconUrls(originalUrl: string, domain: string): string[] {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-    const edgeFunctionUrls = supabaseUrl
+    const safeDomain = encodeURIComponent(domain);
+
+    const supabaseUrls = supabaseUrl
       ? [
-          `${supabaseUrl}/functions/v1/favicon-service?domain=${encodeURIComponent(domain)}&size=64`,
-          `${supabaseUrl}/functions/v1/favicon-service?domain=${encodeURIComponent(domain)}&size=32`,
+          // Storage CDN 直连（命中即返回，404 时进入 Edge Function 填充）
+          `${supabaseUrl}/storage/v1/object/public/favicons/favicons/${domain}-64.ico`,
+          `${supabaseUrl}/storage/v1/object/public/favicons/favicons/${domain}-32.ico`,
+          // Edge Function：拉源 + 写 Storage
+          `${supabaseUrl}/functions/v1/favicon-service?domain=${safeDomain}&size=64`,
+          `${supabaseUrl}/functions/v1/favicon-service?domain=${safeDomain}&size=32`,
         ]
       : [];
 
     return [
-      ...edgeFunctionUrls,
+      ...supabaseUrls,
 
-      // Fallback：公共 CORS 代理（Edge Function 不可用时兜底）
+      // Fallback：公共 CORS 代理
       `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://favicon.im/${domain}?larger=true&size=64`)}`,
       `https://corsproxy.io/?${encodeURIComponent(`https://favicon.im/${domain}?larger=true&size=64`)}`,
 

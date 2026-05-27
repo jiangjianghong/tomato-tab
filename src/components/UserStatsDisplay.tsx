@@ -1,6 +1,8 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useUserStats } from '@/hooks/useUserStats';
+import AnnualReport from '@/components/AnnualReport';
+import TomatoIcon from '@/components/TomatoIcon';
 
 interface WebsiteData {
   id: string;
@@ -16,6 +18,7 @@ interface UserStatsDisplayProps {
 
 export default function UserStatsDisplay({ websites = [] }: UserStatsDisplayProps) {
   const { stats, getDaysUsed } = useUserStats();
+  const [showReport, setShowReport] = useState(false);
 
   const daysUsed = getDaysUsed();
 
@@ -39,6 +42,19 @@ export default function UserStatsDisplay({ websites = [] }: UserStatsDisplayProp
 
   return (
     <div className="space-y-6 select-none">
+      {/* 年度报告入口：温暖色调 + 番茄图标，引导用户进入故事化视图 */}
+      <button
+        onClick={() => setShowReport(true)}
+        className="w-full bg-gradient-to-r from-rose-500 to-orange-500 hover:from-rose-600 hover:to-orange-600 text-white rounded-xl p-4 flex items-center gap-3 shadow-md hover:shadow-lg active:scale-[0.98] transition-all"
+      >
+        <TomatoIcon size={32} variant="bounce" />
+        <div className="flex-1 text-left">
+          <div className="text-sm font-semibold">我的便签页报告</div>
+          <div className="text-xs text-white/85">{daysUsed} 天的数据，一段故事</div>
+        </div>
+        <i className="fa-solid fa-chevron-right text-white/80" />
+      </button>
+
       {/* 使用概览 - 田字排列 */}
       <div className="grid grid-cols-2 gap-4">
         <StatCard
@@ -180,6 +196,13 @@ export default function UserStatsDisplay({ websites = [] }: UserStatsDisplayProp
         <i className="fa-solid fa-clock-rotate-left mr-1"></i>
         首次使用: {stats.firstUseDate}
       </div>
+
+      {/* 年度报告全屏覆盖层 */}
+      <AnnualReport
+        isOpen={showReport}
+        onClose={() => setShowReport(false)}
+        websites={websites}
+      />
     </div>
   );
 }

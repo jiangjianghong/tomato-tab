@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
+import TomatoIcon from '@/components/TomatoIcon';
 
 export default function NotFound() {
   const navigate = useNavigate();
@@ -37,10 +38,16 @@ export default function NotFound() {
       </div>
 
       <div className="relative z-10 text-center max-w-2xl px-6">
-        {/* 404 数字 */}
-        <div className="text-[120px] font-extrabold leading-none mb-6">
+        {/* 404 数字：中间的 0 用番茄替代，强化品牌烙印 */}
+        <div className="text-[120px] font-extrabold leading-none mb-6 flex items-center justify-center gap-3">
           <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-red-400 bg-clip-text text-transparent animate-gradient">
-            404
+            4
+          </span>
+          <div className="inline-block" style={{ width: 110, height: 110 }}>
+            <TomatoIcon size={110} variant="bounce" />
+          </div>
+          <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-red-400 bg-clip-text text-transparent animate-gradient">
+            4
           </span>
         </div>
 

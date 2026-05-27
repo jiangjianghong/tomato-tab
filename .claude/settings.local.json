@@ -32,7 +32,9 @@
       "Bash(curl:*)",
       "WebFetch(domain:developers.notion.com)",
       "Bash(pnpm exec *)",
-      "Bash(echo \"exit code: $?\")"
+      "Bash(echo \"exit code: $?\")",
+      "Bash(echo \"exit: $?\")",
+      "Bash(pnpm build:client)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
