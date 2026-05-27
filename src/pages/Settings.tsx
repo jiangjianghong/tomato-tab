@@ -845,7 +845,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                   key={section.id}
                   onClick={() => scrollToSection(section.id)}
                   className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm transition-all duration-200 group relative ${activeSection === section.id
-                    ? 'text-gray-900 dark:text-white font-bold'
+                    ? 'text-blue-700 dark:text-blue-300 font-bold'
                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-white/50 dark:hover:bg-gray-700/30'
                     }`}
                 >
@@ -1017,7 +1017,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                       <button
                         onClick={handleUploadToCloud}
                         disabled={isManualSyncing}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-sm rounded-lg hover:from-blue-600 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed transition-all duration-200 shadow-lg select-none"
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-100 disabled:bg-gray-50 disabled:text-gray-400 disabled:border-gray-100 disabled:cursor-not-allowed disabled:hover:bg-gray-50 dark:bg-blue-900/30 dark:hover:bg-blue-900/40 dark:text-blue-300 dark:border-blue-800 dark:disabled:bg-gray-800 dark:disabled:text-gray-500 dark:disabled:border-gray-700 text-sm rounded-lg transition-colors duration-200 select-none"
                       >
                         <i
                           className={`fa-solid ${isManualSyncing ? 'fa-spinner fa-spin' : 'fa-cloud-upload-alt'} select-none`}
@@ -1029,7 +1029,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                       <button
                         onClick={handleDownloadFromCloud}
                         disabled={isManualSyncing}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-sm rounded-lg hover:from-blue-600 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed transition-all duration-200 shadow-lg select-none"
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-100 disabled:bg-gray-50 disabled:text-gray-400 disabled:border-gray-100 disabled:cursor-not-allowed disabled:hover:bg-gray-50 dark:bg-blue-900/30 dark:hover:bg-blue-900/40 dark:text-blue-300 dark:border-blue-800 dark:disabled:bg-gray-800 dark:disabled:text-gray-500 dark:disabled:border-gray-700 text-sm rounded-lg transition-colors duration-200 select-none"
                       >
                         <i
                           className={`fa-solid ${isManualSyncing ? 'fa-spinner fa-spin' : 'fa-cloud-download-alt'} select-none`}
@@ -1514,7 +1514,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                       {wallpapers.length > 0 && (
                         <button
                           onClick={() => setShowWallpaperGallery(true)}
-                          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02]"
+                          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/40 dark:text-blue-300 dark:border-blue-800 text-sm font-medium rounded-lg transition-colors duration-200"
                         >
                           <i className="fa-solid fa-images"></i>
                           <span>管理壁纸库 ({wallpapers.length})</span>
@@ -2092,7 +2092,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
 
                 <button
                   onClick={() => setShowAddCardModal(true)}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02] select-none"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/40 dark:text-blue-300 dark:border-blue-800 text-sm font-medium rounded-lg transition-colors duration-200 select-none"
                 >
                   <i className="fa-solid fa-plus select-none"></i>
                   <span className="select-none">添加新卡片</span>
@@ -2120,7 +2120,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
 
                 <button
                   onClick={() => setShowUserStatsModal(true)}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-md shadow-blue-500/25 hover:shadow-lg hover:shadow-blue-500/30 hover:scale-[1.02] select-none"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/40 dark:text-blue-300 dark:border-blue-800 text-sm font-medium rounded-lg transition-colors duration-200 select-none"
                 >
                   <i className="fa-solid fa-chart-simple select-none"></i>
                   <span className="select-none">查看使用统计</span>
@@ -2141,8 +2141,8 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                     onClick={exportData}
                     disabled={isExporting}
                     className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 select-none ${isExporting
-                      ? 'bg-gray-400 cursor-not-allowed text-white shadow-lg shadow-gray-400/30'
-                      : 'bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-md shadow-blue-500/25 hover:shadow-lg hover:shadow-blue-500/30 hover:scale-[1.02]'
+                      ? 'bg-gray-50 text-gray-400 border border-gray-100 cursor-not-allowed dark:bg-gray-800 dark:text-gray-500 dark:border-gray-700'
+                      : 'bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/40 dark:text-blue-300 dark:border-blue-800'
                       }`}
                   >
                     {isExporting ? (
@@ -2162,8 +2162,8 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isImporting}
                     className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 select-none ${isImporting
-                      ? 'bg-gray-400 cursor-not-allowed text-white shadow-lg shadow-gray-400/30'
-                      : 'bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-md shadow-blue-500/25 hover:shadow-lg hover:shadow-blue-500/30 hover:scale-[1.02]'
+                      ? 'bg-gray-50 text-gray-400 border border-gray-100 cursor-not-allowed dark:bg-gray-800 dark:text-gray-500 dark:border-gray-700'
+                      : 'bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/40 dark:text-blue-300 dark:border-blue-800'
                       }`}
                   >
                     {isImporting ? (
@@ -2225,7 +2225,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                 <div className="grid grid-cols-1 gap-3">
                   <button
                     onClick={() => setShowPrivacySettings(true)}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02] select-none"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/40 dark:text-blue-300 dark:border-blue-800 text-sm font-medium rounded-lg transition-colors duration-200 select-none"
                   >
                     <i className="fa-solid fa-shield-halved select-none"></i>
                     <span className="select-none">隐私设置</span>
@@ -2235,7 +2235,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                     href="/help/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-b from-gray-100 to-gray-200 dark:from-gray-600 dark:to-gray-700 hover:from-gray-200 hover:to-gray-300 dark:hover:from-gray-500 dark:hover:to-gray-600 text-gray-700 dark:text-gray-200 text-sm font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02] select-none"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-100 dark:bg-gray-800/50 dark:hover:bg-gray-800 dark:text-gray-200 dark:border-gray-700 text-sm font-medium rounded-lg transition-colors duration-200 select-none"
                     style={{ textDecoration: 'none' }}
                   >
                     <i className="fa-solid fa-graduation-cap select-none"></i>
