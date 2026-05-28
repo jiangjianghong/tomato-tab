@@ -29,7 +29,15 @@ function loadEnginesFromStorage(): SearchEngine[] {
     if (!raw) return [...BUILTIN_ENGINES];
     const parsed = JSON.parse(raw) as SearchEngine[];
     if (!Array.isArray(parsed) || parsed.length === 0) return [...BUILTIN_ENGINES];
-    const result = [...parsed];
+    // 内置项的元数据(name/urlTemplate/iconType/iconValue)以代码为准刷新,
+    // 仅保留用户控制的字段(enabled),避免 icon 等改动后被旧数据卡住
+    const result: SearchEngine[] = parsed.map((e) => {
+      if (!e.isBuiltin) return e;
+      const builtin = BUILTIN_ENGINES.find((b) => b.id === e.id);
+      if (!builtin) return e;
+      return { ...builtin, enabled: e.enabled };
+    });
+    // 完整性兜底:缺失的内置项补齐
     for (const builtin of BUILTIN_ENGINES) {
       if (!result.some((e) => e.id === builtin.id)) {
         result.push({ ...builtin });
