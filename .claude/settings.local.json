@@ -35,7 +35,13 @@
       "Bash(echo \"exit code: $?\")",
       "Bash(echo \"exit: $?\")",
       "Bash(pnpm build:client)",
-      "Bash(npx eslint *)"
+      "Bash(npx eslint *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(pnpm lint *)",
+      "Bash(ESLINT_USE_FLAT_CONFIG=false npx eslint src/types/searchEngine.ts)",
+      "Bash(pnpm build *)",
+      "Bash(git checkout *)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
