@@ -28,10 +28,10 @@ export function SearchEngineManager() {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 select-none">
       {/* 内置引擎 */}
       <div>
-        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2.5">内置引擎</h4>
+        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2.5 select-none">内置引擎</h4>
         <div className="space-y-2">
           {builtins.map((engine) => (
             <EngineRow
@@ -46,16 +46,16 @@ export function SearchEngineManager() {
       {/* 自定义引擎 */}
       <div>
         <div className="flex items-center justify-between mb-2.5">
-          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">自定义引擎</h4>
+          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 select-none">自定义引擎</h4>
           <button
             onClick={() => setIsAdding(true)}
-            className="px-3 py-1 text-xs bg-blue-500 hover:bg-blue-600 rounded-md text-white transition-colors"
+            className="px-3 py-1 text-xs bg-blue-500 hover:bg-blue-600 rounded-md text-white transition-colors select-none"
           >
             <i className="fa-solid fa-plus mr-1"></i>添加
           </button>
         </div>
         {customs.length === 0 ? (
-          <div className="text-xs text-gray-500 dark:text-gray-400 italic py-4 text-center bg-gray-50 dark:bg-gray-900/30 rounded-md">
+          <div className="text-xs text-gray-500 dark:text-gray-400 italic py-4 text-center bg-gray-50 dark:bg-gray-900/30 rounded-md select-none">
             还没有自定义引擎,点 + 添加
           </div>
         ) : (
@@ -96,9 +96,9 @@ interface EngineRowProps {
 
 function EngineRow({ engine, onToggle, onEdit, onDelete }: EngineRowProps) {
   return (
-    <div className="flex items-center gap-3 p-2.5 bg-gray-50 dark:bg-gray-900/30 hover:bg-gray-100 dark:hover:bg-gray-900/50 rounded-md transition-colors">
+    <div className="flex items-center gap-3 p-2.5 bg-gray-50 dark:bg-gray-900/30 hover:bg-gray-100 dark:hover:bg-gray-900/50 rounded-md transition-colors select-none">
       <SearchEngineIcon engine={engine} size={20} />
-      <span className="flex-1 text-sm text-gray-800 dark:text-gray-100">{engine.name}</span>
+      <span className="flex-1 text-sm text-gray-800 dark:text-gray-100 select-none">{engine.name}</span>
       {!engine.isBuiltin && onEdit && (
         <button
           onClick={onEdit}

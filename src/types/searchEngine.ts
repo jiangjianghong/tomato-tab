@@ -31,7 +31,7 @@ export const BUILTIN_ENGINES: SearchEngine[] = [
   },
   {
     id: 'baidu',
-    name: '百度',
+    name: 'Baidu',
     urlTemplate: 'https://www.baidu.com/s?wd={query}',
     iconType: 'local',
     iconValue: 'icon/baidu.svg',
@@ -40,7 +40,7 @@ export const BUILTIN_ENGINES: SearchEngine[] = [
   },
   {
     id: 'duckduckgo',
-    name: 'DuckDuckGo',
+    name: 'Duckgo',
     urlTemplate: 'https://duckduckgo.com/?q={query}',
     iconType: 'local',
     iconValue: 'icon/DuckDuckGo.svg',
