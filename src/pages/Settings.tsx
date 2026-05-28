@@ -28,6 +28,7 @@ import { useDataManager } from '@/hooks/useDataManager';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { faviconCache } from '@/lib/faviconCache';
 import SmoothSlider from '@/components/SmoothSlider';
+import { SearchEngineManager } from '@/components/SearchEngineManager';
 
 interface SettingsProps {
   onClose: () => void;
@@ -43,6 +44,7 @@ const SECTIONS = [
   { id: 'theme', label: '主题显示', icon: 'fa-moon' },
   { id: 'wallpaper', label: '壁纸设置', icon: 'fa-image' },
   { id: 'features', label: '基础功能', icon: 'fa-cogs' },
+  { id: 'searchEngine', label: '搜索引擎', icon: 'fa-magnifying-glass' },
   { id: 'interaction', label: '交互体验', icon: 'fa-wand-magic-sparkles' },
   { id: 'time', label: '时间设置', icon: 'fa-clock' },
   { id: 'cards', label: '卡片管理', icon: 'fa-layer-group' },
@@ -1626,6 +1628,23 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                     />
                   </button>
                 </div>
+              </div>
+            </div>
+
+            <div id="searchEngine" ref={(el) => (sectionsRef.current['searchEngine'] = el)} className="space-y-5 select-none settings-section scroll-mt-6">
+              <div className="flex items-center gap-3 select-none">
+                <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                  <i className="fa-solid fa-magnifying-glass text-white text-xs"></i>
+                </div>
+                <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100 select-none">搜索引擎</h3>
+                <div className="flex-1 h-px bg-gradient-to-r from-gray-200 dark:from-gray-700 to-transparent"></div>
+              </div>
+
+              <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+                  管理可用的搜索引擎,内置项可启用 / 禁用,自定义项可增删改
+                </p>
+                <SearchEngineManager />
               </div>
             </div>
 

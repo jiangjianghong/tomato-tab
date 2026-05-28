@@ -77,29 +77,29 @@ export function EngineEditModal({ engine, onClose }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm"
       onClick={onClose}
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-gray-900 border border-white/10 rounded-lg p-6 w-[90vw] max-w-md shadow-2xl"
+        className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 w-[90vw] max-w-md shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 className="text-lg font-medium text-white mb-4">
+        <h3 className="text-lg font-medium text-gray-800 dark:text-gray-100 mb-4">
           {engine ? '编辑搜索引擎' : '添加搜索引擎'}
         </h3>
 
         {/* 预览 */}
-        <div className="flex items-center gap-3 p-3 bg-white/5 rounded-md mb-4">
+        <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-900/40 rounded-md mb-4">
           <SearchEngineIcon engine={previewEngine} size={24} />
-          <span className="text-sm text-white/80">{previewEngine.name}</span>
+          <span className="text-sm text-gray-700 dark:text-gray-200">{previewEngine.name}</span>
         </div>
 
         {/* 名称 */}
         <div className="mb-3">
-          <label className="block text-xs text-white/70 mb-1">名称</label>
+          <label className="block text-xs text-gray-600 dark:text-gray-300 mb-1">名称</label>
           <input
             type="text"
             value={name}
@@ -108,16 +108,16 @@ export function EngineEditModal({ engine, onClose }: Props) {
               setTouched(true);
             }}
             placeholder="例如:GitHub"
-            className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-md text-white text-sm outline-none focus:border-white/30"
+            className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900/40 border border-gray-200 dark:border-gray-700 rounded-md text-gray-800 dark:text-gray-100 text-sm outline-none focus:border-blue-500"
             maxLength={20}
             autoFocus
           />
-          {nameError && <p className="text-xs text-red-400 mt-1">{nameError}</p>}
+          {nameError && <p className="text-xs text-red-500 mt-1">{nameError}</p>}
         </div>
 
         {/* URL */}
         <div className="mb-4">
-          <label className="block text-xs text-white/70 mb-1">
+          <label className="block text-xs text-gray-600 dark:text-gray-300 mb-1">
             搜索 URL(用 {'{query}'} 占位)
           </label>
           <input
@@ -128,23 +128,23 @@ export function EngineEditModal({ engine, onClose }: Props) {
               setTouched(true);
             }}
             placeholder="https://example.com/search?q={query}"
-            className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-md text-white text-sm font-mono outline-none focus:border-white/30"
+            className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900/40 border border-gray-200 dark:border-gray-700 rounded-md text-gray-800 dark:text-gray-100 text-sm font-mono outline-none focus:border-blue-500"
           />
-          {urlError && <p className="text-xs text-red-400 mt-1">{urlError}</p>}
+          {urlError && <p className="text-xs text-red-500 mt-1">{urlError}</p>}
         </div>
 
         {/* 按钮 */}
         <div className="flex gap-2 justify-end">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm text-white/70 hover:text-white transition-colors"
+            className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
           >
             取消
           </button>
           <button
             onClick={handleSubmit}
             disabled={!!nameError || !!urlError || !name.trim() || !urlTemplate.trim()}
-            className="px-4 py-2 text-sm bg-blue-500 hover:bg-blue-600 disabled:bg-white/10 disabled:text-white/40 disabled:cursor-not-allowed rounded-md text-white transition-colors"
+            className="px-4 py-2 text-sm bg-blue-500 hover:bg-blue-600 disabled:bg-gray-200 disabled:text-gray-400 dark:disabled:bg-gray-700 dark:disabled:text-gray-500 disabled:cursor-not-allowed rounded-md text-white transition-colors"
           >
             {engine ? '保存' : '添加'}
           </button>
