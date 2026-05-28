@@ -9,6 +9,9 @@ import { processFaviconUrl } from '@/lib/faviconUtils';
 import { pinyin, match as pinyinMatch } from 'pinyin-pro';
 import { userStatsManager } from '@/hooks/useUserStats';
 import { createTomatoRain } from './effects/TomatoRain';
+import { useSearchEngine } from '@/contexts/SearchEngineContext';
+import { SearchEngineIcon } from '@/components/SearchEngineIcon';
+import { buildSearchUrl } from '@/types/searchEngine';
 
 interface WebsiteData {
   id: string;
@@ -38,16 +41,17 @@ interface SearchBarProps {
 function SearchBarComponent(props: SearchBarProps = {}) {
   const { websites = [], onOpenSettings } = props;
   const inputRef = useRef<HTMLInputElement>(null);
+  const engineButtonRef = useRef<HTMLButtonElement>(null);
   const [isFocused, setIsFocused] = useState(false);
   const { searchBarOpacity, searchBarColor, setIsSearchFocused, searchInNewTab, isSettingsOpen, searchBarBorderRadius, animationStyle, aiIconDisplayMode, darkMode } =
     useTransparency();
   const { isMobile } = useResponsiveLayout();
   const { isWorkspaceOpen, setIsWorkspaceOpen, workspaceItems } = useWorkspace();
+  const { currentEngine, enabledEngines, cycleToNext } = useSearchEngine();
 
   // 状态变量声明移到useEffect之前
   const [searchQuery, setSearchQuery] = useState('');
   const [isHovered, setIsHovered] = useState(false);
-  const [engine, setEngine] = useState<'bing' | 'google'>('bing');
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [websiteSuggestions, setWebsiteSuggestions] = useState<WebsiteData[]>([]);
   const [workspaceSuggestions, setWorkspaceSuggestions] = useState<WorkspaceSuggestionData[]>([]);
@@ -241,12 +245,10 @@ function SearchBarComponent(props: SearchBarProps = {}) {
         if (!isInput || isOurSearchInput) {
           e.preventDefault();
           // 切换引擎并触发彩带动画
-          setEngine((prevEngine) => (prevEngine === 'bing' ? 'google' : 'bing'));
+          cycleToNext();
 
           // 触发彩带动画 - 从搜索引擎按钮位置
-          const engineButton = document
-            .querySelector('.fa-brands.fa-microsoft, .fa-brands.fa-google')
-            ?.closest('button');
+          const engineButton = engineButtonRef.current;
           if (engineButton) {
             const rect = engineButton.getBoundingClientRect();
             const centerX = rect.left + rect.width / 2;
@@ -295,23 +297,14 @@ function SearchBarComponent(props: SearchBarProps = {}) {
     window.addEventListener('keydown', handleGlobalKeyDown, { capture: true });
     return () =>
       window.removeEventListener('keydown', handleGlobalKeyDown, { capture: true } as any);
-  }, [setIsSearchFocused, searchQuery, isFocused, createFireworkEffect, isSettingsOpen, isWorkspaceOpen, showTodoModal]);
-
-  const engineList = [
-    { key: 'bing', label: 'Bing', icon: <i className="fa-brands fa-microsoft text-blue-400"></i> },
-    { key: 'google', label: 'Google', icon: <i className="fa-brands fa-google text-blue-500"></i> },
-  ];
+  }, [setIsSearchFocused, searchQuery, isFocused, createFireworkEffect, isSettingsOpen, isWorkspaceOpen, showTodoModal, cycleToNext]);
 
   // 切换搜索引擎并触发动画
   const switchEngine = () => {
-    const idx = engineList.findIndex((e) => e.key === engine);
-    const newEngine = engineList[(idx + 1) % engineList.length].key as any;
-    setEngine(newEngine);
+    cycleToNext();
 
     // 触发彩带动画 - 从搜索引擎按钮位置
-    const engineButton = document
-      .querySelector('.fa-brands.fa-microsoft, .fa-brands.fa-google')
-      ?.closest('button');
+    const engineButton = engineButtonRef.current;
     if (engineButton) {
       const rect = engineButton.getBoundingClientRect();
       const centerX = rect.left + rect.width / 2;
@@ -495,19 +488,10 @@ function SearchBarComponent(props: SearchBarProps = {}) {
     </span>,
   ];
 
-  const getSearchUrl = (engine: string, query: string) => {
-    switch (engine) {
-      case 'google':
-        return `https://www.google.com/search?q=${encodeURIComponent(query)}`;
-      default:
-        return `https://www.bing.com/search?q=${encodeURIComponent(query)}`;
-    }
-  };
-
   // 执行搜索并记录统计
-  const performSearchWithStats = (engine: string, query: string) => {
+  const performSearchWithStats = (query: string) => {
     userStatsManager.recordSearch();
-    openUrl(getSearchUrl(engine, query));
+    openUrl(buildSearchUrl(currentEngine, query));
   };
 
   // 根据设置打开链接的辅助函数
@@ -1333,7 +1317,7 @@ function SearchBarComponent(props: SearchBarProps = {}) {
         // 常规搜索
         const queryToSearch = selectedSuggestion?.query || searchQuery;
         if (queryToSearch.trim()) {
-          performSearchWithStats(engine, queryToSearch);
+          performSearchWithStats(queryToSearch);
           setSearchQuery('');
           setShowSuggestions(false);
           setWebsiteSuggestions([]);
@@ -1454,7 +1438,7 @@ function SearchBarComponent(props: SearchBarProps = {}) {
         }
 
         // 搜索引擎搜索
-        performSearchWithStats(engine, queryToSearch);
+        performSearchWithStats(queryToSearch);
         setSearchQuery('');
         setShowSuggestions(false);
         setWebsiteSuggestions([]);
@@ -1551,10 +1535,11 @@ function SearchBarComponent(props: SearchBarProps = {}) {
                 /* Animation complete */
               }}
             >
-              {/* 搜索引擎切换按钮和“搜索”字样 */}
+              {/* 搜索引擎切换按钮和"搜索"字样 */}
               <div className="relative flex items-center">
                 <motion.button
                   type="button"
+                  ref={engineButtonRef}
                   whileTap={{ scale: 0.9, filter: 'brightness(0.8)' }}
                   className="flex items-center gap-2 px-1.5 py-1 text-white/80 hover:text-white bg-transparent border-none outline-none text-lg select-none relative z-20"
                   style={{
@@ -1573,16 +1558,20 @@ function SearchBarComponent(props: SearchBarProps = {}) {
                   onMouseEnter={() => setShowEngineTooltip(true)}
                   onMouseLeave={() => setShowEngineTooltip(false)}
                 >
-                  {engineList.find((e) => e.key === engine)?.icon}
+                  <SearchEngineIcon engine={currentEngine} size={20} />
                   <span className="hidden sm:inline text-base font-semibold select-none">
-                    {engineList.find((e) => e.key === engine)?.label}
+                    {currentEngine.name}
                   </span>
                 </motion.button>
 
                 {/* 自定义美观的 tooltip */}
                 {showEngineTooltip && (
                   <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800/90 text-white text-sm rounded-lg shadow-lg backdrop-blur-sm border border-white/10 whitespace-nowrap z-30">
-                    切换至 {engine === 'bing' ? 'Google' : 'Bing'}
+                    {(() => {
+                      const idx = enabledEngines.findIndex(e => e.id === currentEngine.id);
+                      const next = enabledEngines[(idx + 1) % enabledEngines.length];
+                      return `切换至 ${next?.name || currentEngine.name}`;
+                    })()}
                     <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-800/90"></div>
                   </div>
                 )}
