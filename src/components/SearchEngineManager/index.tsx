@@ -119,14 +119,18 @@ function EngineRow({ engine, onToggle, onEdit, onDelete }: EngineRowProps) {
       )}
       <button
         onClick={onToggle}
-        className={`relative w-10 h-5 rounded-full transition-colors ${
-          engine.enabled ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'
+        className={`relative inline-flex h-7 w-12 items-center rounded-full transition-all duration-300 hover:scale-105 ${
+          engine.enabled
+            ? 'bg-gradient-to-r from-blue-500 to-blue-600 shadow-md shadow-blue-500/30'
+            : 'bg-gradient-to-r from-gray-400 to-gray-500 dark:from-gray-600 dark:to-gray-700 shadow-lg shadow-gray-300/50 dark:shadow-gray-900/50'
         }`}
         title={engine.enabled ? '已启用' : '已禁用'}
       >
         <span
-          className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-transform shadow-sm ${
-            engine.enabled ? 'translate-x-5' : 'translate-x-0.5'
+          className={`inline-block h-5 w-5 transform rounded-full bg-white dark:bg-gray-200 transition-all duration-300 shadow-md ${
+            engine.enabled
+              ? 'translate-x-6 shadow-blue-200'
+              : 'translate-x-1 shadow-gray-200 dark:shadow-gray-600'
           }`}
         />
       </button>
