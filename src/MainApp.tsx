@@ -10,6 +10,7 @@ const Admin = lazy(() => import('@/pages/Admin'));
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { TransparencyProvider } from '@/contexts/TransparencyContext';
+import { SearchEngineProvider } from '@/contexts/SearchEngineContext';
 import { AuthProvider, useAuth } from '@/contexts/SupabaseAuthContext';
 import { SyncProvider } from '@/contexts/SyncContext';
 import { UserProfileProvider, useUserProfile } from '@/contexts/UserProfileContext';
@@ -317,17 +318,19 @@ export default function MainApp() {
   return (
     <DndProvider backend={HTML5Backend}>
       <TransparencyProvider>
-        <AuthProvider>
-          <SyncProvider>
-            <UserProfileProvider>
-              <AdminProvider>
-                <WorkspaceProvider>
-                  <AppContent />
-                </WorkspaceProvider>
-              </AdminProvider>
-            </UserProfileProvider>
-          </SyncProvider>
-        </AuthProvider>
+        <SearchEngineProvider>
+          <AuthProvider>
+            <SyncProvider>
+              <UserProfileProvider>
+                <AdminProvider>
+                  <WorkspaceProvider>
+                    <AppContent />
+                  </WorkspaceProvider>
+                </AdminProvider>
+              </UserProfileProvider>
+            </SyncProvider>
+          </AuthProvider>
+        </SearchEngineProvider>
       </TransparencyProvider>
     </DndProvider>
   );
