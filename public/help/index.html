@@ -98,7 +98,7 @@
             <section id="overview" class="section">
                 <h2>概述</h2>
                 <p>
-                    欢迎使用本网站！本指南将帮助你了解和使用网站的各项功能，包括注册登录、卡片配置、搜索以及 Notion 工作空间集成等。
+                    欢迎使用 <strong>Tomato Tab</strong> —— 一款功能丰富的浏览器新标签页扩展。本指南将帮助你了解和使用网站的各项功能，包括卡片导航、多引擎搜索、Notion 工作空间集成、个性化定制等。
                 </p>
                 <div class="feature-list">
                     <div class="feature">
@@ -111,7 +111,7 @@
                         </div>
                         <div class="feature-content">
                             <h4>数据安全</h4>
-                            <p>所有数据存储在你的 Notion 账户中，本地仅缓存</p>
+                            <p>本地优先架构，数据存储在浏览器本地（IndexedDB + LocalStorage），登录后可选云端同步备份</p>
                         </div>
                     </div>
                     <div class="feature">
@@ -122,8 +122,8 @@
                             </svg>
                         </div>
                         <div class="feature-content">
-                            <h4>实时同步</h4>
-                            <p>与 Notion 数据库保持实时同步，随时访问最新内容</p>
+                            <h4>多引擎搜索</h4>
+                            <p>内置 Bing、Google、百度、DuckDuckGo，支持自定义引擎，集成 8 大 AI 助手</p>
                         </div>
                     </div>
                     <div class="feature">
@@ -134,7 +134,7 @@
                         </div>
                         <div class="feature-content">
                             <h4>灵活扩展</h4>
-                            <p>自定义字段和分类，适应不同的使用场景</p>
+                            <p>自定义卡片导航、壁纸系统、氛围粒子、Notion 工作空间集成，适应不同使用场景</p>
                         </div>
                     </div>
                 </div>
@@ -211,6 +211,21 @@
                                 </span>
                             </div>
                         </div>
+
+                        <div class="flex items-start gap-3">
+                            <div class="w-1.5 h-1.5 rounded-full bg-blue-500 mt-2.5"></div>
+                            <div>
+                                <span class="font-medium text-gray-800">忘记密码流程：</span>
+                                <div class="mt-2 bg-blue-50 rounded-lg p-3 text-xs text-blue-800 space-y-1">
+                                    <p>1. 在登录页点击 <strong>"忘记密码"</strong> 链接</p>
+                                    <p>2. 输入注册时使用的邮箱地址</p>
+                                    <p>3. 系统通过 Supabase 发送重置密码邮件（触发 60 秒冷却）</p>
+                                    <p>4. 邮件中的链接跳转到 <code>/reset-password</code> 页面</p>
+                                    <p>5. 输入新密码完成重置（无需旧密码）</p>
+                                    <p class="text-blue-600 mt-1">注意：仅支持邮箱注册用户，OAuth 用户（Google/GitHub/Notion）不支持密码重置</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="mt-6 rounded-xl overflow-hidden shadow-lg border border-gray-200">
@@ -267,14 +282,46 @@
                         </h3>
                         <div class="space-y-4">
                             <div class="bg-blue-50 rounded-lg p-3">
-                                <h4 class="font-medium text-blue-700 text-sm mb-1">智能合并 (Smart Merge)</h4>
+                                <h4 class="font-medium text-blue-700 text-sm mb-1">自动同步模式 <span class="text-xs font-normal text-blue-500">默认开启</span></h4>
                                 <p class="text-xs text-blue-600">
-                                    当本地与云端数据冲突时，系统会基于<strong>"访问次数"</strong>自动保留更有价值的数据，并去除重复项。
+                                    在设置中可切换 <strong>自动同步</strong>（默认）或 <strong>手动同步</strong> 模式。自动模式下，数据变化后会延迟一段时间再同步到云端，避免频繁请求。关闭自动同步后，所有待执行的同步定时器立即清除。
                                 </p>
                             </div>
-                            <div class="flex gap-2 text-xs">
-                                <span class="bg-gray-100 px-2 py-1 rounded text-gray-600">云端覆盖本地</span>
-                                <span class="bg-gray-100 px-2 py-1 rounded text-gray-600">本地覆盖云端</span>
+                            <div class="bg-indigo-50 rounded-lg p-3">
+                                <h4 class="font-medium text-indigo-700 text-sm mb-1">同步延迟滑块 <span class="text-xs font-normal text-indigo-500">3 - 60 秒，默认 10 秒</span></h4>
+                                <p class="text-xs text-indigo-600">
+                                    控制数据变化后等待多久再执行同步。<strong>这不是轮询间隔</strong>，而是每次变化后的防抖延迟。每次新变化会重置计时器，连续编辑时不会频繁触发同步。特殊规则：<strong>删除操作</strong>强制 3 秒延迟（无论滑块设置），确保快速同步关键操作。关闭设置面板或保存卡片时会<strong>立即强制同步</strong>，不受延迟限制。
+                                </p>
+                            </div>
+                            <div class="bg-violet-50 rounded-lg p-3">
+                                <h4 class="font-medium text-violet-700 text-sm mb-1">数据指纹检测</h4>
+                                <p class="text-xs text-violet-600">
+                                    系统通过 <strong>JSON 序列化</strong>生成数据指纹（包含每个卡片的 id、名称、URL、访问次数，以及 16 项关键设置如不透明度、壁纸分辨率、主题、排序等）。每次效果运行时对比当前指纹与上次同步时的指纹，<strong>完全相同则跳过同步</strong>，从根本上避免无效请求。
+                                </p>
+                            </div>
+                            <div class="bg-emerald-50 rounded-lg p-3">
+                                <h4 class="font-medium text-emerald-700 text-sm mb-1">自动同步触发条件（全部满足才执行）</h4>
+                                <ul class="text-xs text-emerald-600 space-y-1">
+                                    <li>1. 数据初始化已完成</li>
+                                    <li>2. 自动同步开关已开启</li>
+                                    <li>3. 数据指纹与上次同步时不同</li>
+                                    <li>4. 浏览器处于在线状态</li>
+                                    <li>5. 用户已登录且邮箱已验证</li>
+                                    <li>6. 至少有一条有效卡片数据（或强制同步模式）</li>
+                                    <li>7. 当前无打开的弹窗/对话框（否则延迟 5 秒后重试）</li>
+                                </ul>
+                            </div>
+                            <div class="bg-amber-50 rounded-lg p-3">
+                                <h4 class="font-medium text-amber-700 text-sm mb-1">冲突解决策略：时间戳优先 (Last Write Wins)</h4>
+                                <p class="text-xs text-amber-600">
+                                    当本地与云端数据冲突时，系统对比每条数据的 <strong>updatedAt</strong>（毫秒级时间戳），保留更新的一方。若时间戳相同，则对比 <strong>visitCount</strong>（访问次数），保留访问次数更高的版本。无论采用哪方数据，<code>visitCount</code> 始终取两者中的较大值，确保不会丢失访问统计。
+                                </p>
+                            </div>
+                            <div class="bg-gray-50 rounded-lg p-3">
+                                <h4 class="font-medium text-gray-700 text-sm mb-1">手动同步模式</h4>
+                                <p class="text-xs text-gray-600">
+                                    关闭自动同步后，设置中会出现两个手动按钮：<strong>"上传到云端"</strong>（将本地数据覆盖到云端）和<strong>"从云端下载"</strong>（将云端数据覆盖到本地，包括同步设置本身）。仅在已登录且邮箱已验证时可用。
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -285,21 +332,63 @@
                         <h3 class="flex items-center gap-2 text-lg font-semibold text-gray-800 mb-4">
                             <i class="fa-solid fa-user-shield text-blue-500"></i> 资料安全规范
                         </h3>
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                             <div class="border border-gray-200 rounded-xl p-4 text-center">
                                 <div class="text-2xl text-blue-500 mb-2"><i class="fa-solid fa-image"></i></div>
                                 <h4 class="font-medium text-gray-800 mb-1">头像上传</h4>
-                                <p class="text-xs text-gray-500">支持 JPG/PNG/WebP<br>最大限制 2MB</p>
+                                <p class="text-xs text-gray-500">支持 JPG/PNG/WebP<br>最大限制 2MB<br>上传至 Supabase Storage</p>
                             </div>
                             <div class="border border-gray-200 rounded-xl p-4 text-center">
                                 <div class="text-2xl text-blue-500 mb-2"><i class="fa-solid fa-signature"></i></div>
                                 <h4 class="font-medium text-gray-800 mb-1">用户名</h4>
-                                <p class="text-xs text-gray-500">2-20 个字符<br>支持中英文、数字、下划线</p>
+                                <p class="text-xs text-gray-500">2-20 个字符<br>支持中英文、数字、下划线、短横线<br>正则校验: <code class="text-[10px]">/^[a-zA-Z0-9一-龥_-]+$/</code></p>
                             </div>
                             <div class="border border-gray-200 rounded-xl p-4 text-center">
                                 <div class="text-2xl text-blue-500 mb-2"><i class="fa-solid fa-key"></i></div>
                                 <h4 class="font-medium text-gray-800 mb-1">密码安全</h4>
-                                <p class="text-xs text-gray-500">最少 6 位字符<br>修改需二次确认</p>
+                                <p class="text-xs text-gray-500">最少 6 位字符<br>修改无需输入旧密码<br>仅需输入新密码 + 确认</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="bg-amber-50 rounded-lg p-3 border border-amber-100">
+                                <h4 class="text-xs font-semibold text-amber-700 mb-2">修改密码流程</h4>
+                                <ul class="text-xs text-amber-800 space-y-1">
+                                    <li>1. 进入设置 → 账号安全 → 修改密码</li>
+                                    <li>2. 输入新密码（至少 6 位）+ 确认新密码</li>
+                                    <li>3. 无需输入旧密码（基于 Supabase 会话认证）</li>
+                                    <li>4. 点击"修改密码"按钮提交</li>
+                                    <li>5. OAuth 用户（仅第三方登录）按钮显示为"设置密码"，可额外设置邮箱密码登录方式</li>
+                                </ul>
+                            </div>
+                            <div class="bg-blue-50 rounded-lg p-3 border border-blue-100">
+                                <h4 class="text-xs font-semibold text-blue-700 mb-2">忘记密码流程</h4>
+                                <ul class="text-xs text-blue-800 space-y-1">
+                                    <li>1. 在登录页点击"忘记密码"</li>
+                                    <li>2. 输入注册邮箱地址</li>
+                                    <li>3. 系统发送重置密码邮件（60 秒冷却防刷）</li>
+                                    <li>4. 邮件中的链接跳转到 <code>/reset-password</code> 页面</li>
+                                    <li>5. 输入新密码完成重置</li>
+                                </ul>
+                            </div>
+                            <div class="bg-red-50 rounded-lg p-3 border border-red-100">
+                                <h4 class="text-xs font-semibold text-red-700 mb-2">注销账号</h4>
+                                <ul class="text-xs text-red-800 space-y-1">
+                                    <li>1. 进入设置 → 账号安全 → 最底部"注销账号"按钮</li>
+                                    <li>2. 第一次确认：弹窗警告"此操作不可撤销"</li>
+                                    <li>3. 第二次确认：需手动输入 <strong>DELETE</strong> 四个大写字母</li>
+                                    <li>4. 调用 Supabase Edge Function 删除用户数据</li>
+                                    <li>5. 删除完成后自动登出</li>
+                                </ul>
+                            </div>
+                            <div class="bg-purple-50 rounded-lg p-3 border border-purple-100">
+                                <h4 class="text-xs font-semibold text-purple-700 mb-2">三方账号绑定规则</h4>
+                                <ul class="text-xs text-purple-800 space-y-1">
+                                    <li>• 支持绑定 Google、GitHub、Notion 三种 OAuth 账号</li>
+                                    <li>• 绑定时跳转到对应平台授权页，授权后自动关联</li>
+                                    <li>• 解绑需二次确认（"确定要解绑 X 账号吗？"）</li>
+                                    <li>• 若 OAuth 账号已被其他用户绑定，提示"该账号已绑定到其他用户"</li>
+                                    <li>• 至少保留一种登录方式，不允许解绑全部</li>
+                                </ul>
                             </div>
                         </div>
                     </div>
@@ -324,28 +413,52 @@
                     <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
                         <h3 class="font-semibold text-gray-800 mb-4 flex items-center gap-2">
                             <i class="fa-solid fa-pen-to-square text-blue-500"></i>
-                            增删改查
+                            添加与编辑卡片
                         </h3>
                         <div class="grid md:grid-cols-2 gap-6">
-                            <div class="space-y-2">
+                            <div class="space-y-3">
                                 <h4 class="text-sm font-medium text-gray-700">添加新卡片</h4>
                                 <p class="text-xs text-gray-500 leading-relaxed">
-                                    进入 <strong>设置 (Settings)</strong> > <strong>卡片管理</strong>，点击"添加新卡片"。
-                                    <br>
-                                    <span class="text-blue-600 bg-blue-50 px-1 rounded">智能获取:</span>
-                                    输入网址后点击"自动获取"，系统将自动抓取标题和图标。
+                                    进入 <strong>设置 (Settings)</strong> > <strong>卡片管理</strong>，点击"添加新卡片"打开编辑弹窗。
+                                </p>
+                                <div class="bg-blue-50 rounded-lg p-3">
+                                    <h5 class="text-xs font-semibold text-blue-700 mb-2">编辑弹窗包含以下字段：</h5>
+                                    <ul class="text-xs text-blue-900 space-y-1.5">
+                                        <li><strong>网址 (URL)*</strong> — 必填，需为有效 URL 格式</li>
+                                        <li><strong>网站名*</strong> — 必填，即卡片上显示的名称。点击"自动获取"时会从域名自动推断</li>
+                                        <li><strong>图标</strong> — 可输入图标 URL 或直接上传本地图片（支持任意图片格式）。上传后自动转为 DataURL 预览</li>
+                                        <li><strong>标签</strong> — 最多 <strong>2 个</strong>，每个最多 <strong>10 个字符</strong>，不允许重复。输入后按 Enter 添加。标签用于搜索匹配（权重 ×0.8）</li>
+                                        <li><strong>备注</strong> — 多行文本，支持记录额外信息。备注也参与搜索匹配（权重 ×0.4）</li>
+                                    </ul>
+                                </div>
+                                <p class="text-xs text-gray-500">
+                                    <span class="text-blue-600 bg-blue-50 px-1 rounded font-medium">智能获取：</span>
+                                    输入网址后点击"自动获取"，系统将依次尝试 8 个来源（每个 3 秒超时）自动抓取标题和图标。同时自动将网站名设为域名主体（去除 www 和顶级域名）。
                                 </p>
                             </div>
-                            <div class="space-y-2">
+                            <div class="space-y-3">
                                 <h4 class="text-sm font-medium text-gray-700">编辑与删除</h4>
                                 <p class="text-xs text-gray-500 leading-relaxed">
-                                    <span class="font-semibold text-gray-600">PC端:</span> 悬停在卡片上，点击右上角的齿轮 <i
+                                    <span class="font-semibold text-gray-600">PC端：</span>悬停在卡片上，点击右上角的齿轮 <i
                                         class="fa-solid fa-gear text-xs"></i> 图标。
                                     <br>
-                                    <span class="font-semibold text-gray-600">移动端:</span> 长按卡片即可唤出编辑菜单。
-                                    <br>
-                                    删除按钮位于编辑弹窗的最下方（需二次确认）。
+                                    <span class="font-semibold text-gray-600">移动端：</span>长按卡片即可唤出编辑菜单。
                                 </p>
+                                <div class="bg-amber-50 rounded-lg p-3">
+                                    <h5 class="text-xs font-semibold text-amber-700 mb-1">编辑弹窗交互细节：</h5>
+                                    <ul class="text-xs text-amber-900 space-y-1">
+                                        <li>• 弹窗带有 <strong>3D 倾斜效果</strong>（鼠标移动时最大倾斜 8°）</li>
+                                        <li>• 关闭按钮悬停时旋转 90°</li>
+                                        <li>• 按 <kbd class="px-1 py-0.5 bg-white border border-gray-300 rounded text-xs">Esc</kbd> 键可快速关闭</li>
+                                        <li>• 保存时若图标有变化，会自动上传到云端存储</li>
+                                    </ul>
+                                </div>
+                                <div class="bg-red-50 rounded-lg p-3">
+                                    <h5 class="text-xs font-semibold text-red-700 mb-1">删除流程：</h5>
+                                    <p class="text-xs text-red-900">
+                                        点击弹窗最下方的红色 <strong>"删除卡片"</strong> 按钮，弹出确认框 "确定要删除这个卡片吗？"，确认后删除并关闭弹窗。
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -364,7 +477,7 @@
                                 </div>
                                 <div>
                                     <span class="text-sm font-medium text-gray-700 block mb-1">自由拖拽 (Drag & Drop)</span>
-                                    <p class="text-xs text-gray-500">按住卡片即可随意拖动调整位置。系统会自动保存您的布局顺序。</p>
+                                    <p class="text-xs text-gray-500">按住卡片即可随意拖动调整位置。松手后系统自动保存布局顺序。默认关闭自动排序时使用此模式。</p>
                                 </div>
                             </div>
                             <div class="flex items-start gap-3">
@@ -375,7 +488,7 @@
                                 <div>
                                     <span class="text-sm font-medium text-gray-700 block mb-1">智能自动排序</span>
                                     <p class="text-xs text-gray-500">
-                                        在设置中开启"自动排序"后，卡片将根据<strong>访问频率</strong>和<strong>最近访问时间</strong>动态排列，让常用网站永远触手可及。
+                                        在设置中开启 <strong>"自动排序"</strong>（默认关闭）后，卡片将根据<strong>访问频率</strong>动态排列，访问越多的卡片越靠前。开启后手动拖拽的顺序会被覆盖。
                                     </p>
                                 </div>
                             </div>
@@ -389,17 +502,35 @@
                             <i class="fa-solid fa-image text-yellow-500"></i>
                             Favicon 图标系统
                         </h3>
-                        <p class="text-sm text-gray-600 mb-3">系统采用五级策略获取图标，确保最佳显示效果：</p>
-                        <ol class="list-decimal list-inside text-xs text-gray-500 space-y-1 ml-1">
-                            <li><strong>官方API代理:</strong> 优先使用 favicon.im 等服务获取高清图标。</li>
-                            <li><strong>Google S2 服务:</strong> 备用全球通用图标源。</li>
-                            <li><strong>DuckDuckGo Icons:</strong> 第三方备用源。</li>
-                            <li><strong>域名根目录:</strong> 尝试直接访问 /favicon.ico。</li>
-                            <li><strong>自定义上传:</strong> 如果自动获取失败，支持上传本地图片 (支持透明PNG)。</li>
-                        </ol>
-                        <p class="text-xs text-violet-600 mt-2 bg-violet-50 p-2 rounded">
-                            <i class="fa-solid fa-bolt"></i> 提示：系统会自动清除旧的图标缓存，确保您获取到网站最新的品牌标识。
-                        </p>
+                        <p class="text-sm text-gray-600 mb-3">系统采用多级策略获取图标，确保最佳显示效果：</p>
+                        <div class="mb-4">
+                            <h4 class="text-xs font-medium text-gray-700 mb-2">添加卡片时自动获取（按优先级逐个尝试，每个来源 3 秒超时）</h4>
+                            <ol class="list-decimal list-inside text-xs text-gray-500 space-y-1.5 ml-1">
+                                <li><strong>favicon.im (通过代理):</strong> 优先使用 allorigins.win 代理访问 favicon.im，绕过跨域限制。</li>
+                                <li><strong>favicon.im (直连):</strong> 代理失败时尝试直连 favicon.im。</li>
+                                <li><strong>Google S2 64px:</strong> 使用 Google S2 Favicon 服务获取 64 像素高清图标。</li>
+                                <li><strong>Google S2 32px:</strong> 降级到 32 像素版本。</li>
+                                <li><strong>DuckDuckGo Icons:</strong> 使用 DuckDuckGo 图标服务。</li>
+                                <li><strong>网站 /favicon.ico:</strong> 直接访问目标网站根目录的 favicon.ico 文件。</li>
+                                <li><strong>网站 /favicon.png:</strong> 尝试访问 favicon.png 格式。</li>
+                                <li><strong>默认图标：</strong> 以上全部失败时使用系统内置默认图标。</li>
+                            </ol>
+                        </div>
+                        <div class="mb-4">
+                            <h4 class="text-xs font-medium text-gray-700 mb-2">日常显示时（卡片在主页上的图标加载路径）</h4>
+                            <ol class="list-decimal list-inside text-xs text-gray-500 space-y-1.5 ml-1">
+                                <li><strong>云端 CDN：</strong> 优先从 Supabase Storage 加载已缓存的图标，速度最快。</li>
+                                <li><strong>Edge Function：</strong> 通过服务器端代理获取，绕过浏览器跨域限制。</li>
+                                <li><strong>favicon.im：</strong> 客户端直连获取。</li>
+                                <li><strong>原始 URL：</strong> 直接从目标网站加载。</li>
+                                <li><strong>默认图标：</strong> 全部失败时的兜底方案。</li>
+                            </ol>
+                        </div>
+                        <div class="bg-violet-50 rounded-lg p-3">
+                            <p class="text-xs text-violet-700">
+                                <i class="fa-solid fa-bolt"></i> <strong>图标缓存机制：</strong>系统会自动清除超过 3 天的旧图标缓存（每 6 小时检查一次），确保获取到网站最新的品牌标识。如果图标仍显示异常，可在设置的卡片管理区使用 <strong>"一键修复图标"</strong> 按钮，它会清除当前所有图标缓存并刷新页面，强制重新获取所有图标。
+                            </p>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -425,37 +556,86 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                             <div class="space-y-2">
                                 <div class="flex items-center justify-between">
-                                    <span class="text-sm font-medium text-gray-700">透明度控制</span>
-                                    <span class="text-xs bg-purple-100 text-purple-600 px-2 py-0.5 rounded">0.05 -
-                                        0.5</span>
+                                    <span class="text-sm font-medium text-gray-700">搜索框不透明度</span>
+                                    <span class="text-xs bg-purple-100 text-purple-600 px-2 py-0.5 rounded">5% - 50%</span>
                                 </div>
                                 <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
                                     <div class="h-full bg-gradient-to-r from-purple-400 to-pink-500 w-1/2"></div>
                                 </div>
-                                <p className="text-xs text-gray-500">精准调节搜索框与卡片的背景透明度，兼顾美观与可读性。</p>
+                                <p class="text-xs text-gray-500">滑块控制搜索框背景的透明程度。<strong>默认 10%</strong>，数值越高背景越不透明。</p>
                             </div>
 
                             <div class="space-y-2">
                                 <div class="flex items-center justify-between">
-                                    <span class="text-sm font-medium text-gray-700">圆角风格</span>
+                                    <span class="text-sm font-medium text-gray-700">卡片不透明度</span>
+                                    <span class="text-xs bg-purple-100 text-purple-600 px-2 py-0.5 rounded">5% - 50%</span>
+                                </div>
+                                <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+                                    <div class="h-full bg-gradient-to-r from-purple-300 to-pink-400 w-1/2"></div>
+                                </div>
+                                <p class="text-xs text-gray-500">独立于搜索框，单独控制卡片背景的透明程度。<strong>默认 10%</strong>。</p>
+                            </div>
+
+                            <div class="space-y-2">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm font-medium text-gray-700">搜索框圆角</span>
                                     <span class="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded">0 - 50px</span>
                                 </div>
                                 <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
                                     <div class="h-full bg-blue-400 w-3/4"></div>
                                 </div>
-                                <p className="text-xs text-gray-500">从硬朗直角到柔和全圆角，搜索框形态随心而定。</p>
+                                <p class="text-xs text-gray-500">调节搜索框的圆角大小。<strong>默认全圆角</strong>。拖到最右 (50px) 为完全胶囊形，拖到最左 (0px) 为硬朗直角。</p>
+                            </div>
+
+                            <div class="space-y-2">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm font-medium text-gray-700">搜索框颜色</span>
+                                    <span class="text-xs bg-pink-100 text-pink-600 px-2 py-0.5 rounded">8 色可选</span>
+                                </div>
+                                <p class="text-xs text-gray-500">提供黑、白、红、黄、蓝、绿、紫、粉 8 种预设颜色，点击即切换。<strong>默认白色</strong>。</p>
+                            </div>
+
+                            <div class="space-y-2">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm font-medium text-gray-700">卡片颜色</span>
+                                    <span class="text-xs bg-pink-100 text-pink-600 px-2 py-0.5 rounded">8 色可选</span>
+                                </div>
+                                <p class="text-xs text-gray-500">与搜索框颜色独立设定，同样 8 种预设。<strong>默认白色</strong>。</p>
                             </div>
 
                             <div class="space-y-2">
                                 <div class="flex items-center justify-between">
                                     <span class="text-sm font-medium text-gray-700">动画质感</span>
-                                    <span class="text-xs bg-green-100 text-green-600 px-2 py-0.5 rounded">Dynamic /
-                                        Simple</span>
+                                    <span class="text-xs bg-green-100 text-green-600 px-2 py-0.5 rounded">灵动 / 简约</span>
                                 </div>
                                 <div class="flex gap-2">
                                     <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                                    <p className="text-xs text-gray-500">选择 "灵动" 获得果冻般回弹效果，或 "简约" 追求极致流畅。</p>
+                                    <p class="text-xs text-gray-500"><strong>灵动 (Dynamic)</strong>：弹簧动画，搜索框展开时有果冻般回弹效果。<strong>简约 (Simple)</strong>：匀速平滑过渡。<strong>默认简约</strong>。</p>
                                 </div>
+                            </div>
+
+                            <div class="space-y-2">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm font-medium text-gray-700">视差背景</span>
+                                    <span class="text-xs bg-amber-100 text-amber-600 px-2 py-0.5 rounded">开 / 关</span>
+                                </div>
+                                <p class="text-xs text-gray-500">开启后，鼠标移动时壁纸会随之轻微平移，营造纵深感。<strong>默认开启</strong>。搜索框聚焦时自动暂停视差效果。</p>
+                            </div>
+
+                            <div class="space-y-2">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm font-medium text-gray-700">链接打开方式</span>
+                                    <span class="text-xs bg-amber-100 text-amber-600 px-2 py-0.5 rounded">新标签 / 当前页</span>
+                                </div>
+                                <p class="text-xs text-gray-500">控制点击卡片、搜索结果、AI 助手时的跳转行为。<strong>默认新标签页打开</strong>。</p>
+                            </div>
+
+                            <div class="space-y-2">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm font-medium text-gray-700">壁纸遮罩</span>
+                                    <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">3 种模式</span>
+                                </div>
+                                <p class="text-xs text-gray-500"><strong>关闭</strong>：不添加遮罩。<strong>始终</strong>：始终在壁纸上覆盖暗角。<strong>智能</strong>：仅在搜索框聚焦时显示。<strong>默认智能</strong>。</p>
                             </div>
                         </div>
                     </div>
@@ -466,26 +646,97 @@
                         <h3 class="text-lg font-semibold text-gray-800 mb-4 border-b border-gray-100 pb-2">壁纸系统</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <h4 class="font-medium text-gray-700 mb-2">每日必应 (Bing Daily)</h4>
+                                <h4 class="font-medium text-gray-700 mb-2">每日必应 (Bing Daily) <span class="text-xs text-gray-400 font-normal">默认壁纸源</span></h4>
                                 <ul class="text-sm text-gray-600 space-y-2">
                                     <li class="flex items-center gap-2"><i class="fa-solid fa-tv text-gray-400"></i>
-                                        <strong>4K 超高清</strong>：适合大屏显示器
+                                        <strong>4K 超高清</strong>：适合大屏显示器（分辨率 UHD）
                                     </li>
                                     <li class="flex items-center gap-2"><i class="fa-solid fa-laptop text-gray-400"></i>
-                                        <strong>1080P 高清</strong>：平衡清晰度与加载速度
+                                        <strong>1080P 高清</strong>：平衡清晰度与加载速度（1920×1080）<span class="text-xs text-gray-400 ml-1">默认</span>
+                                    </li>
+                                    <li class="flex items-center gap-2"><i class="fa-solid fa-display text-gray-400"></i>
+                                        <strong>720P 标清</strong>：加载更快，适合弱网环境（1366×768）
                                     </li>
                                     <li class="flex items-center gap-2"><i
                                             class="fa-solid fa-mobile-screen text-gray-400"></i>
                                         <strong>竖屏适配</strong>：移动端专属优化
                                     </li>
                                 </ul>
+                                <div class="mt-3 bg-blue-50 rounded-lg p-3">
+                                    <p class="text-xs text-blue-700">
+                                        <i class="fa-solid fa-rotate"></i> <strong>自动更新：</strong>每日自动获取新壁纸。壁纸缓存有效期 48 小时，页面可见时自动检查是否需要更新。下载失败时自动重试（30s → 60s → 120s → 240s，最多 8 次），有旧缓存时先显示旧壁纸再后台下载新的。过期超过 3 天的缓存自动清理（每 6 小时检查）。
+                                    </p>
+                                </div>
                             </div>
                             <div>
                                 <h4 class="font-medium text-gray-700 mb-2">自定义上传</h4>
                                 <div
                                     class="border-2 border-dashed border-gray-200 rounded-xl p-4 text-center bg-gray-50">
                                     <i class="fa-solid fa-cloud-upload-alt text-2xl text-gray-400 mb-2"></i>
-                                    <p class="text-xs text-gray-500">支持全屏拖拽上传<br>Max 10MB (JPG/PNG/WebP)</p>
+                                    <p class="text-xs text-gray-500">支持全屏拖拽上传或点击选择<br>格式 JPG/PNG/WebP，最大 <strong>10MB</strong></p>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-2">上传后自动保存原图到浏览器本地数据库（IndexedDB），有效期 1 年。同时自动生成 300px 宽缩略图用于壁纸库列表预览。在设置中可管理已上传的壁纸：预览、删除、下载到本地、设为当前壁纸。</p>
+                            </div>
+                        </div>
+                        <div class="mt-4 bg-rose-50 rounded-xl p-4 border border-rose-100">
+                            <h4 class="font-medium text-rose-700 text-sm mb-1 flex items-center gap-2">
+                                <i class="fa-solid fa-heart text-rose-500"></i> 壁纸收藏与管理
+                            </h4>
+                            <p class="text-xs text-rose-600">
+                                搜索框聚焦时，右上角会出现 <span class="font-semibold">心形按钮</span>，点击即可收藏当前 Bing 壁纸到本地壁纸库。在设置中可以管理已收藏的壁纸列表，支持预览、删除和一键设为当前壁纸。
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- 主题与氛围 -->
+                    <div
+                        class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4 border-b border-gray-100 pb-2">主题与氛围</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <h4 class="font-medium text-gray-700 mb-2">夜间模式 <span class="text-xs text-gray-400 font-normal">默认跟随系统</span></h4>
+                                <ul class="text-sm text-gray-600 space-y-2">
+                                    <li class="flex items-center gap-2"><i class="fa-solid fa-moon text-indigo-400"></i>
+                                        <strong>跟随系统</strong>：自动适配操作系统的深浅色模式
+                                    </li>
+                                    <li class="flex items-center gap-2"><i class="fa-solid fa-clock text-indigo-400"></i>
+                                        <strong>定时切换</strong>：自定义时间段自动切换（默认 22:00 开启 → 06:00 关闭）
+                                    </li>
+                                    <li class="flex items-center gap-2"><i class="fa-solid fa-toggle-on text-indigo-400"></i>
+                                        <strong>始终开启</strong>：强制深色模式
+                                    </li>
+                                    <li class="flex items-center gap-2"><i class="fa-solid fa-toggle-off text-indigo-400"></i>
+                                        <strong>始终关闭</strong>：强制浅色模式
+                                    </li>
+                                </ul>
+                                <p class="text-xs text-gray-500 mt-2">深色模式下壁纸会自动适配深色滤镜。</p>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-gray-700 mb-2">氛围粒子效果 <span class="text-xs text-gray-400 font-normal">默认自动</span></h4>
+                                <ul class="text-sm text-gray-600 space-y-2">
+                                    <li class="flex items-center gap-2"><i class="fa-solid fa-wand-magic-sparkles text-violet-400"></i>
+                                        <strong>自动模式</strong>：根据季节智能切换（冬季→雪花、秋季→落叶，其他季节关闭）
+                                    </li>
+                                    <li class="flex items-center gap-2"><i class="fa-solid fa-snowflake text-blue-400"></i>
+                                        <strong>雪花飘落</strong>：冬季专属，双层 Canvas 实现远近景深度
+                                    </li>
+                                    <li class="flex items-center gap-2"><i class="fa-solid fa-leaf text-orange-400"></i>
+                                        <strong>落叶纷飞</strong>：秋季氛围
+                                    </li>
+                                    <li class="flex items-center gap-2"><i class="fa-solid fa-fan text-pink-400"></i>
+                                        <strong>樱花飘落</strong>：春日浪漫
+                                    </li>
+                                    <li class="flex items-center gap-2"><i class="fa-solid fa-sparkles text-yellow-400"></i>
+                                        <strong>萤火虫</strong>：夏夜微光
+                                    </li>
+                                    <li class="flex items-center gap-2"><i class="fa-solid fa-xmark text-gray-400"></i>
+                                        <strong>关闭</strong>：不显示任何粒子效果
+                                    </li>
+                                </ul>
+                                <div class="mt-3 bg-violet-50 rounded-lg p-3 space-y-2">
+                                    <p class="text-xs text-violet-700"><strong>粒子数量：</strong>可调节 1-100（默认 30），数值越高粒子越密集。</p>
+                                    <p class="text-xs text-violet-700"><strong>风力效果：</strong>开启后粒子会受风力影响产生横向飘移（默认开启）。</p>
+                                    <p class="text-xs text-violet-700"><strong>慢放效果：</strong>在主页空白区域按住鼠标左键，粒子速度降至 10%（慢动作），松手恢复。切换效果时旧粒子会加速飘走退场，新粒子 1.2 秒内逐步补满。</p>
                                 </div>
                             </div>
                         </div>
@@ -495,17 +746,30 @@
                     <div
                         class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
                         <h3 class="text-lg font-semibold text-gray-800 mb-4 border-b border-gray-100 pb-2">时间与效率</h3>
-                        <div class="flex flex-wrap gap-4">
-                            <span class="px-3 py-1 bg-gray-100 rounded-full text-xs text-gray-600">显示秒数开关</span>
-                            <span class="px-3 py-1 bg-gray-100 rounded-full text-xs text-gray-600">农历/星期显示</span>
-                            <span
-                                class="px-3 py-1 bg-orange-100 text-orange-600 rounded-full text-xs font-medium">下班倒计时</span>
-                            <span
-                                class="px-3 py-1 bg-green-100 text-green-600 rounded-full text-xs font-medium">午休提醒</span>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <h4 class="font-medium text-gray-700 mb-2">时间显示 <span class="text-xs text-gray-400 font-normal">默认开启</span></h4>
+                                <ul class="text-xs text-gray-600 space-y-1.5">
+                                    <li>• <strong>格式：</strong>24 小时制，显示 HH:MM，开启秒数后显示 HH:MM:SS</li>
+                                    <li>• <strong>秒数开关：</strong>可关闭，关闭后仅显示时:分，冒号每 500ms 闪烁</li>
+                                    <li>• <strong>日期：</strong>中文格式，可独立控制年/月/日的显示开关</li>
+                                    <li>• <strong>星期：</strong>显示为"星期X"格式，可单独开关</li>
+                                    <li>• <strong>位置：</strong>搜索框上方居中</li>
+                                    <li>• <strong>点击交互：</strong>点击时间文字可直接打开待办事项 (Todo) 弹窗</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-gray-700 mb-2">下班 / 午休倒计时 <span class="text-xs text-gray-400 font-normal">默认关闭</span></h4>
+                                <p class="text-xs text-gray-600 mb-2">开启后，<strong>鼠标悬停</strong>在时间区域时切换显示倒计时，移开恢复显示日期。</p>
+                                <ul class="text-xs text-gray-600 space-y-1.5">
+                                    <li>• <strong>午休时间：</strong>默认 12:00，可自定义</li>
+                                    <li>• <strong>下班时间：</strong>默认 18:00，可自定义</li>
+                                    <li>• <strong>午休前：</strong>显示"距离午休: X时X分X秒"</li>
+                                    <li>• <strong>午休后-下班前：</strong>显示"距离下班: X时X分X秒"</li>
+                                    <li>• <strong>下班后：</strong>显示"已下班，好好休息吧"</li>
+                                </ul>
+                            </div>
                         </div>
-                        <p class="text-sm text-gray-500 mt-3">
-                            开启"下班倒计时"后，鼠标悬停在时间区域，即可看到距离下班或午休的精确剩余时间，助您劳逸结合。
-                        </p>
                     </div>
                 </div>
             </section>
@@ -521,9 +785,43 @@
                 </div>
 
                 <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm mb-6">
-                    <p class="text-gray-600 mb-6 leading-relaxed">
+                    <p class="text-gray-600 mb-4 leading-relaxed">
                         搜索框是本应用的控制中枢。它不仅支持多引擎搜索，还集成了完整的<strong>命令行系统 (Command Line)</strong>，让您无需鼠标即可掌控全局。
                     </p>
+
+                    <!-- 搜索框交互 -->
+                    <div class="mb-8 bg-gradient-to-r from-orange-50 to-red-50 rounded-xl p-4 border border-orange-100">
+                        <h3 class="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-computer-mouse text-orange-500"></i>
+                            搜索框交互行为
+                        </h3>
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <h4 class="text-xs font-medium text-gray-700">未聚焦状态</h4>
+                                <ul class="text-xs text-gray-600 space-y-1">
+                                    <li>• 默认宽度 340px（移动端 200px），居中显示</li>
+                                    <li>• placeholder 文字 "搜点啥捏..."</li>
+                                    <li>• 左侧显示当前搜索引擎图标 + 名称</li>
+                                    <li>• 悬停时宽度扩展到 520px（移动端 300px），弹簧动画</li>
+                                    <li>• 按 <kbd class="px-1 py-0.5 bg-white border border-gray-300 rounded text-xs">Space</kbd> 聚焦</li>
+                                </ul>
+                            </div>
+                            <div class="space-y-2">
+                                <h4 class="text-xs font-medium text-gray-700">聚焦状态</h4>
+                                <ul class="text-xs text-gray-600 space-y-1">
+                                    <li>• 页面出现半透明黑色遮罩 + 背景模糊效果</li>
+                                    <li>• 搜索框宽度固定 520px</li>
+                                    <li>• 设置按钮和工作空间按钮淡出缩小</li>
+                                    <li>• 壁纸视差效果暂停</li>
+                                    <li>• 右上角出现壁纸收藏心形按钮（仅 Bing 壁纸时）</li>
+                                    <li>• 底部显示每日诗词</li>
+                                    <li>• 输入内容后 300ms 防抖，显示搜索建议</li>
+                                    <li>• 建议列表最多 5 条，分三个区块：网站(紫色)、工作空间(蓝色)、搜索(绿色)</li>
+                                    <li>• 按 <kbd class="px-1 py-0.5 bg-white border border-gray-300 rounded text-xs">Esc</kbd> 或点击遮罩失焦</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
 
                     <!-- 快捷指令表 -->
                     <div class="mb-8">
@@ -550,7 +848,7 @@
                                     <tr class="hover:bg-gray-50">
                                         <td class="px-4 py-2"><code
                                                 class="bg-gray-100 px-1 py-0.5 rounded">todo: [内容]</code></td>
-                                        <td class="px-4 py-2"><strong>直接添加</strong>一条待办事项</td>
+                                        <td class="px-4 py-2"><strong>直接添加</strong>一条待办事项，无需打开弹窗。添加成功后底部显示绿色 Toast 提示</td>
                                         <td class="px-4 py-2 text-gray-500">todo: 买牛奶</td>
                                     </tr>
                                     <tr class="hover:bg-gray-50">
@@ -559,7 +857,7 @@
                                             <code>工作</code>
                                         </td>
                                         <td class="px-4 py-2">打开 Notion 工作空间</td>
-                                        <td class="px-4 py-2 text-gray-500">work</td>
+                                        <td class="px-4 py-2 text-gray-500">work / 办公 / 工作空间</td>
                                     </tr>
                                     <tr class="hover:bg-gray-50">
                                         <td class="px-4 py-2"><code
@@ -567,7 +865,7 @@
                                             <code>设置</code>
                                         </td>
                                         <td class="px-4 py-2">打开系统设置面板</td>
-                                        <td class="px-4 py-2 text-gray-500">config</td>
+                                        <td class="px-4 py-2 text-gray-500">setting / config / 配置</td>
                                     </tr>
                                     <tr class="hover:bg-gray-50">
                                         <td class="px-4 py-2"><code class="bg-gray-100 px-1 py-0.5 rounded">help</code>
@@ -575,7 +873,7 @@
                                             <code>帮助</code>
                                         </td>
                                         <td class="px-4 py-2">打开本帮助文档</td>
-                                        <td class="px-4 py-2 text-gray-500">guide</td>
+                                        <td class="px-4 py-2 text-gray-500">指南 / 帮助页面</td>
                                     </tr>
                                     <tr class="hover:bg-gray-50">
                                         <td class="px-4 py-2"><code
@@ -583,7 +881,15 @@
                                             <code>作者</code>
                                         </td>
                                         <td class="px-4 py-2">查看开发者信息 ("About Me")</td>
-                                        <td class="px-4 py-2 text-gray-500">me</td>
+                                        <td class="px-4 py-2 text-gray-500">developer / me / 开发者</td>
+                                    </tr>
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="px-4 py-2"><code
+                                                class="bg-gray-100 px-1 py-0.5 rounded">tomato</code> 或
+                                            <code>番茄</code>
+                                        </td>
+                                        <td class="px-4 py-2">触发番茄雨彩蛋 <span class="text-xs text-violet-500 bg-violet-50 px-1.5 py-0.5 rounded ml-1">彩蛋</span></td>
+                                        <td class="px-4 py-2 text-gray-500">西红柿</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -605,7 +911,7 @@
                             <div class="text-center">
                                 <kbd
                                     class="px-2 py-1 bg-white border border-gray-300 rounded-lg text-xs font-mono text-gray-700 shadow-sm">Tab</kbd>
-                                <p class="text-xs text-gray-500 mt-1">切换 Google / Bing</p>
+                                <p class="text-xs text-gray-500 mt-1">切换搜索引擎</p>
                             </div>
                             <div class="text-center">
                                 <kbd
@@ -628,7 +934,7 @@
                                 <i class="fa-solid fa-robot text-blue-500"></i>
                                 集成 8 大 AI 模型
                             </h3>
-                            <p class="text-sm text-gray-600">点击搜索框下方的图标可直达 AI 助手。我们精心挑选了全球最强和国内最快的大模型：</p>
+                            <p class="text-sm text-gray-600">搜索框右侧搜索图标旁，悬停时展开 8 个 AI 助手图标，点击即可在新标签页直达对应 AI 网站：</p>
                             <div class="grid grid-cols-4 gap-2 text-center text-xs text-gray-500">
                                 <div class="bg-gray-50 p-2 rounded">ChatGPT</div>
                                 <div class="bg-gray-50 p-2 rounded">Gemini</div>
@@ -638,6 +944,11 @@
                                 <div class="bg-gray-50 p-2 rounded">Claude</div>
                                 <div class="bg-gray-50 p-2 rounded">智谱</div>
                                 <div class="bg-gray-50 p-2 rounded">通义千问</div>
+                            </div>
+                            <div class="mt-2 bg-blue-50 rounded-lg p-3">
+                                <p class="text-xs text-blue-700">
+                                    <strong>布局模式：</strong>支持两种显示样式，可在设置中切换。<strong>圆形环绕</strong>（默认）：悬停时以扇形展开，内圈 4 个 + 外圈 4 个双层布局，半径分别为 44px 和 75px，悬停显示名称气泡。<strong>下拉面板</strong>：点击后以下拉列表形式展示。仅在 PC 端显示，移动端隐藏。
+                                </p>
                             </div>
                         </div>
 
@@ -676,6 +987,10 @@
                         <ul class="space-y-2 text-sm text-gray-600">
                             <li class="flex items-center gap-2">
                                 <span class="w-1.5 h-1.5 rounded-full bg-orange-400"></span>
+                                <span><strong>搜索引擎管理：</strong>内置 Bing (默认)、Google、百度、DuckDuckGo 四大引擎。在设置中可：<strong>启停引擎</strong>（Toggle 开关，至少保留一个启用）；<strong>添加自定义引擎</strong>（填写名称 + 搜索 URL，URL 必须含 <code>{query}</code> 占位符，名称最长 20 字符，图标自动从域名获取）；<strong>编辑/删除</strong>自定义引擎（内置引擎不可编辑/删除）。Tab 键或点击引擎图标在所有已启用引擎间循环切换。</span>
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <span class="w-1.5 h-1.5 rounded-full bg-orange-400"></span>
                                 <span><strong>Visual Feedbacks：</strong>切换搜索引擎（Tab键）时会触发粒子烟花特效，不仅是视觉糖果，更是操作确认。</span>
                             </li>
                             <li class="flex items-center gap-2">
@@ -686,6 +1001,10 @@
                                 <span class="w-1.5 h-1.5 rounded-full bg-orange-400"></span>
                                 <span><strong>URL 智能识别：</strong>输入 <code>localhost:3000</code> 或 IP
                                     地址时，系统会自动识别为直达链接而非搜索词。</span>
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <span class="w-1.5 h-1.5 rounded-full bg-orange-400"></span>
+                                <span><strong>链接打开方式：</strong>可在设置中选择在新标签页或当前页打开链接。</span>
                             </li>
                         </ul>
                     </div>
@@ -725,6 +1044,44 @@
                 <div class="note">
                     <strong>提示：</strong>以下是详细的工作空间配置步骤，请按照步骤操作。
                 </div>
+
+                <h3>功能详解</h3>
+                <div class="grid md:grid-cols-2 gap-4 mt-4">
+                    <div class="bg-white rounded-xl p-4 border border-gray-100">
+                        <h4 class="font-medium text-gray-700 text-sm mb-2"><i class="fa-solid fa-list text-blue-500 mr-1"></i> 双视图模式</h4>
+                        <ul class="text-xs text-gray-600 space-y-1">
+                            <li>• <strong>列表视图：</strong>每项为圆角卡片，左侧彩色首字母图标（8 色循环），显示标题/分类标签/URL/描述，操作按钮悬停显示</li>
+                            <li>• <strong>卡片视图：</strong>网格布局（移动端 2 列，桌面最多 6 列），卡片支持 <strong>3D 翻转效果</strong>展示背面登录信息</li>
+                            <li>• 通过顶部 <strong>ViewSwitcher</strong> 切换两种视图</li>
+                        </ul>
+                    </div>
+                    <div class="bg-white rounded-xl p-4 border border-gray-100">
+                        <h4 class="font-medium text-gray-700 text-sm mb-2"><i class="fa-solid fa-key text-amber-500 mr-1"></i> 密码管理</h4>
+                        <ul class="text-xs text-gray-600 space-y-1">
+                            <li>• <strong>列表视图：</strong>按 <kbd class="px-1 py-0.5 bg-gray-100 border border-gray-300 rounded text-xs">D</kbd> 或 <kbd class="px-1 py-0.5 bg-gray-100 border border-gray-300 rounded text-xs">Space</kbd> 或点击眼睛图标展开登录信息</li>
+                            <li>• 密码显示为黑色圆点（最多 12 个），有复制按钮</li>
+                            <li>• <strong>卡片视图：</strong>点击眼睛图标触发 3D 翻转（0.7 秒），背面显示账号/密码。无密码时显示锁图标和"无需登录信息"</li>
+                        </ul>
+                    </div>
+                    <div class="bg-white rounded-xl p-4 border border-gray-100">
+                        <h4 class="font-medium text-gray-700 text-sm mb-2"><i class="fa-solid fa-folder text-green-500 mr-1"></i> 分类筛选</h4>
+                        <ul class="text-xs text-gray-600 space-y-1">
+                            <li>• 顶部显示分类 Tab，选中项有蓝色滑动背景动画</li>
+                            <li>• 每个 Tab 显示分类图标 + 名称 + 数量徽章</li>
+                            <li>• 支持键盘左右箭头键切换，数字键 <kbd class="px-1 py-0.5 bg-gray-100 border border-gray-300 rounded text-xs">0</kbd>-<kbd class="px-1 py-0.5 bg-gray-100 border border-gray-300 rounded text-xs">9</kbd> 快速跳转（0 = 全部）</li>
+                        </ul>
+                    </div>
+                    <div class="bg-white rounded-xl p-4 border border-gray-100">
+                        <h4 class="font-medium text-gray-700 text-sm mb-2"><i class="fa-solid fa-magnifying-glass text-purple-500 mr-1"></i> 搜索与导航</h4>
+                        <ul class="text-xs text-gray-600 space-y-1">
+                            <li>• 搜索框聚焦时显示蓝色边框动画 + 缩放 1.02 倍</li>
+                            <li>• 支持拼音匹配（全拼/首字母），匹配文字黄色高亮</li>
+                            <li>• 方向键导航卡片/列表项（有蓝色焦点框跟随动画）</li>
+                            <li>• <kbd class="px-1 py-0.5 bg-gray-100 border border-gray-300 rounded text-xs">Enter</kbd> 打开链接，<kbd class="px-1 py-0.5 bg-gray-100 border border-gray-300 rounded text-xs">C</kbd> 复制 URL</li>
+                            <li>• 底部状态栏显示所有可用快捷键提示</li>
+                        </ul>
+                    </div>
+                </div>
             </section>
 
             <!-- 配置步骤 -->
@@ -755,7 +1112,7 @@
                 <h2><span class="step-number">2</span>授权连接</h2>
                 <p>回到本网站设置页，点击连接按钮，选择 Notion 账号登录。</p>
                 <div class="note warning">
-                    <strong>关键步骤：</strong> 在授权页面，请务必勾选你刚刚复制的那个 <strong>"Tomato WorkSpace"</strong> 页面。
+                    <strong>关键步骤：</strong> 在授权页面，请务必勾选你刚刚复制的那个数据库页面。
                 </div>
                 <p>授权完成后，系统会自动识别并连接该数据库，无需任何手动配置！</p>
                 <div class="image-container" data-src="image-8.png">
@@ -770,57 +1127,34 @@
 
                 <div class="faq-item">
                     <h4>Q: 如何切换其他 Notion 账号？</h4>
-                    <p>点击设置页右上角的 <span class="text-red-500">"断开连接"</span> 按钮，然后重新点击连接并选择这不同的 Notion 账号登录即可。</p>
+                    <p>点击设置页右上角的 <span class="text-red-500">"断开连接"</span> 按钮，然后重新点击连接并选择不同的 Notion 账号登录即可。断开后本地缓存的数据库配置会被清除。</p>
                 </div>
 
                 <div class="faq-item">
                     <h4>Q: 如何更换绑定的数据库？</h4>
-                    <p>在已连接状态下，您可以直接在下方的数据库列表中点击切换。如果没有看到您想要的数据库，请点击列表上方的 "重新授权" 按钮，并确保在 Notion 授权页勾选了该页面。</p>
+                    <p>在已连接状态下，您可以直接在下方的数据库列表中点击切换。如果没有看到您想要的数据库，请点击列表上方的 "重新授权" 按钮，并确保在 Notion 授权页勾选了该页面。一个 Notion 账号下可以有多个数据库，系统会列出所有可访问的数据库供选择。</p>
                 </div>
 
                 <div class="faq-item">
                     <h4>Q: 更换电脑或浏览器需要重新配置吗？</h4>
-                    <p>需要。为了安全，数据库配置仅保存在当前浏览器中。不过您的授权信息是云端保存的，在新设备上点击连接通常会自动识别，只需再次确认选择数据库即可。</p>
+                    <p>需要。为了安全，数据库配置（Notion API 密钥和数据库 ID）仅保存在当前浏览器的本地存储中。不过您的 OAuth 授权信息是云端保存的，在新设备上点击连接通常会自动识别，只需再次确认选择数据库即可。</p>
+                </div>
+
+                <div class="faq-item">
+                    <h4>Q: 工作空间数据会自动同步吗？</h4>
+                    <p>工作空间数据直接从 Notion API 实时读取，每次打开工作空间面板时都会拉取最新数据。这与卡片数据的 Supabase 云同步是<strong>两套独立机制</strong>——工作空间走 Notion 通道，卡片和设置走 Supabase 通道。</p>
+                </div>
+
+                <div class="faq-item">
+                    <h4>Q: 为什么搜索框搜不到工作空间的内容？</h4>
+                    <p>搜索框会同时搜索本地卡片和 Notion 工作空间数据，但需要工作空间数据已加载（即至少打开过一次工作空间面板）。搜索结果中工作空间匹配项显示为蓝色区块，带分类标签和 URL。</p>
+                </div>
+
+                <div class="faq-item">
+                    <h4>Q: 卡片视图的 3D 翻转怎么用？</h4>
+                    <p>在卡片视图下，点击卡片右下角的 <i class="fa-solid fa-eye text-xs"></i> 眼睛图标，卡片会以 Y 轴旋转 180°（0.7 秒动画）展示背面的账号和密码信息。再次点击翻转回来。如果该条目没有密码，背面会显示锁图标和"无需登录信息"提示。</p>
                 </div>
             </section>
-    </div>
-    </div>
-
-
-
-    <section id="workspace-step3" class="section">
-        <h2><span class="step-number">3</span>安装 Notion Web Clipper</h2>
-        <p>
-            为了方便地保存网页到 Notion 数据库，建议安装
-            <a href="https://chrome.google.com/webstore/detail/notion-web-clipper/knheggckgoiihginacbkhaalnibhilkk"
-                target="_blank" rel="noopener">
-                Notion Web Clipper 扩展
-            </a>。
-        </p>
-        <ol class="step-list">
-            <li>在浏览器扩展商店搜索 "Notion Web Clipper"</li>
-            <li>点击"添加到浏览器"</li>
-            <li>登录你的 Notion 账户并授权</li>
-        </ol>
-    </section>
-
-    <section id="workspace-step4" class="section">
-        <h2><span class="step-number">4</span>添加第一个条目</h2>
-        <p>使用 Web Clipper 保存网页：</p>
-        <ol class="step-list">
-            <li>访问任意网页</li>
-            <li>点击浏览器工具栏的 Notion 图标</li>
-            <li>选择刚创建的数据库</li>
-            <li>填写相关信息后保存</li>
-        </ol>
-        <div class="image-container" data-src="image-10.png">
-            <div class="image-placeholder">
-                <span>加载中...</span>
-            </div>
-        </div>
-    </section>
-
-
 
     <!-- 小部件与彩蛋 -->
     <section id="widgets" class="section">
@@ -850,13 +1184,32 @@
                 </p>
                 <div
                     className="bg-orange-50 rounded-lg p-3 text-sm text-orange-800 border border-orange-100 relative z-10">
-                    <strong>触发方式：</strong> 直接点击主页面的 <span class="bg-white px-1.5 py-0.5 rounded shadow-sm">时间数字</span>
+                    <strong>触发方式：</strong> 直接点击主页面的 <span class="bg-white px-1.5 py-0.5 rounded shadow-sm">时间数字</span>，或输入命令 <code>/todo</code>、<code>待办</code>
                 </div>
-                <ul class="mt-4 space-y-2 text-xs text-gray-500 relative z-10">
-                    <li>• 随手记录灵感与任务</li>
-                    <li>• 完成任务时的庆典动画</li>
-                    <li>• 支持 <code>/todo</code> 搜索命令快速呼出</li>
-                </ul>
+                <div class="mt-4 grid grid-cols-2 gap-3 text-xs text-gray-600 relative z-10">
+                    <div class="space-y-1">
+                        <p class="font-medium text-gray-700">添加与编辑</p>
+                        <ul class="space-y-1 text-gray-500">
+                            <li>• 点击 "NEW TODO" 创建新待办</li>
+                            <li>• 未完成上限 <strong>30 条</strong>，达到后按钮变灰</li>
+                            <li>• 点击文字进入全屏编辑（记事本风格横线背景，楷体字体）</li>
+                            <li>• 最大 <strong>400 字符</strong>，实时显示字符计数</li>
+                            <li>• <kbd class="px-1 py-0.5 bg-gray-100 border border-gray-300 rounded text-xs">Enter</kbd> 保存，<kbd class="px-1 py-0.5 bg-gray-100 border border-gray-300 rounded text-xs">Esc</kbd> 取消，点击外部自动保存</li>
+                            <li>• <code>todo: 买牛奶</code> 命令可直接添加</li>
+                        </ul>
+                    </div>
+                    <div class="space-y-1">
+                        <p class="font-medium text-gray-700">完成与排序</p>
+                        <ul class="space-y-1 text-gray-500">
+                            <li>• 点击左侧圆形复选框切换完成状态</li>
+                            <li>• 标记完成时触发 <strong>庆祝特效</strong>（20 个彩色粒子从点击位置抛射，5 种颜色，受重力下落，2 秒消散）</li>
+                            <li>• 完成后文字加删除线、变灰，移至底部</li>
+                            <li>• 未完成项可拖拽排序，已完成项按时间沉底</li>
+                            <li>• 悬停显示删除按钮（红色垃圾桶），点击直接删除无确认</li>
+                            <li>• 弹窗标题栏显示未完成数量</li>
+                        </ul>
+                    </div>
+                </div>
             </div>
 
             <!-- 每日一言 -->
@@ -866,18 +1219,19 @@
                     <h3 class="text-lg font-semibold mb-2"><i class="fa-solid fa-quote-left mr-2 opacity-60"></i>每日诗词
                     </h3>
                     <p class="text-blue-100 text-xs leading-relaxed">
-                        精选 Hitokoto 诗词接口，每 10 分钟或切换标签页时自动更新。
+                        精选一言 Hitokoto 诗词接口 (c=i 分类)，每 10 分钟自动刷新，页面从后台切回时也会立即刷新。
                     </p>
                 </div>
                 <div class="mt-4 text-center">
                     <p class="font-serif italic text-lg opacity-90">"山高水长，人间值得。"</p>
                 </div>
-                <div class="mt-4 text-xs text-blue-200 text-center bg-white/10 rounded py-1">
-                    仅在搜索聚焦时显现
+                <div class="mt-4 text-xs text-blue-200 space-y-1">
+                    <div class="text-center bg-white/10 rounded py-1">仅在搜索框聚焦时显现（延迟 0.6 秒淡入）</div>
+                    <div class="text-center">请求失败时显示降级文案"诗词歌赋，尽在不言中。"</div>
                 </div>
             </div>
 
-            <!-- 招财猫彩蛋 -->
+            <!-- 神秘的猫咪 -->
             <div
                 class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex items-center gap-4">
                 <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center text-3xl">
@@ -886,9 +1240,23 @@
                 <div>
                     <h3 class="font-semibold text-gray-800">神秘的猫咪</h3>
                     <p class="text-xs text-gray-500 mt-1">
-                        在页面停留 <strong>10秒</strong> 后出现。<br>
-                        点击它，去看看作者的故事。
+                        页面加载 <strong>10 秒</strong>后从屏幕右侧走入（仅 PC 端，移动端隐藏）。纯 CSS 绘制的黑色猫咪，脚爪交替踩踏、尾巴摇摆、耳朵胡须联动，30 秒走穿整个屏幕后循环。<br>
+                        <strong>点击它</strong>，去看看作者的故事。
                     </p>
+                </div>
+            </div>
+
+            <!-- 番茄雨彩蛋 -->
+            <div
+                class="bg-gradient-to-br from-red-500 to-orange-500 rounded-2xl p-6 text-white shadow-lg shadow-red-500/20 flex flex-col justify-between">
+                <div>
+                    <h3 class="text-lg font-semibold mb-2"><i class="fa-solid fa-droplet mr-2 opacity-80"></i>番茄雨彩蛋</h3>
+                    <p class="text-red-100 text-xs leading-relaxed">
+                        在搜索框输入 <code class="bg-white/20 px-1 py-0.5 rounded">tomato</code>、<code class="bg-white/20 px-1 py-0.5 rounded">番茄</code> 或 <code class="bg-white/20 px-1 py-0.5 rounded">西红柿</code> 并回车，即可触发满屏番茄飘落动画。
+                    </p>
+                </div>
+                <div class="mt-3 text-center text-3xl">
+                    🍅🍅🍅
                 </div>
             </div>
         </div>
@@ -1008,12 +1376,18 @@
             <h4 class="text-sm font-medium text-gray-600 mb-3">卡片/列表项操作</h4>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="flex items-center justify-between p-3 bg-purple-50 rounded-xl">
-                    <span class="text-sm text-gray-700">复制链接</span>
+                    <div>
+                        <span class="text-sm text-gray-700 block">复制链接</span>
+                        <span class="text-xs text-gray-400">需先选中某项，复制成功显示绿色提示</span>
+                    </div>
                     <kbd
                         class="px-3 py-1.5 bg-white border border-purple-200 rounded-lg text-sm font-mono text-gray-700 shadow-sm">C</kbd>
                 </div>
                 <div class="flex items-center justify-between p-3 bg-purple-50 rounded-xl">
-                    <span class="text-sm text-gray-700">显示/隐藏密码</span>
+                    <div>
+                        <span class="text-sm text-gray-700 block">显示/隐藏密码</span>
+                        <span class="text-xs text-gray-400">列表视图展开登录信息；卡片视图触发 3D 翻转</span>
+                    </div>
                     <div class="flex gap-2">
                         <kbd
                             class="px-3 py-1.5 bg-white border border-purple-200 rounded-lg text-sm font-mono text-gray-700 shadow-sm">D</kbd>
@@ -1064,24 +1438,40 @@
         <div class="bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl p-6 border border-amber-100">
             <h3 class="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
                 <i class="fa-solid fa-lightbulb text-amber-500"></i>
-                小贴士
+                行为细节与小贴士
             </h3>
-            <ul class="space-y-2 text-sm text-gray-600">
+            <ul class="space-y-3 text-sm text-gray-600">
                 <li class="flex items-start gap-2">
                     <i class="fa-solid fa-check text-amber-500 mt-1"></i>
-                    <span><strong>Tab 键切换引擎</strong>时会触发粒子烟花特效，提供视觉反馈。</span>
+                    <div><strong>Space 键的双重身份：</strong>在主页未聚焦搜索框时，按 Space 聚焦搜索框。在搜索框已聚焦且内容为空时，按 Space 退出聚焦（失焦）。这意味着 Space 键在搜索框场景下既是"打开"也是"关闭"。</div>
                 </li>
                 <li class="flex items-start gap-2">
                     <i class="fa-solid fa-check text-amber-500 mt-1"></i>
-                    <span><strong>Esc 键</strong>在工作空间中是渐进式的：先清除搜索内容 → 再取消选中项 → 最后关闭工作空间。</span>
+                    <div><strong>Tab 键切换引擎</strong>时会触发粒子烟花特效，提供视觉反馈。切换顺序为所有已启用引擎的循环顺序（在设置中可调整启停状态）。</div>
                 </li>
                 <li class="flex items-start gap-2">
                     <i class="fa-solid fa-check text-amber-500 mt-1"></i>
-                    <span><strong>数字键 0-9</strong> 可以快速切换工作空间的分类，0 对应"全部"。</span>
+                    <div><strong>Esc 键的渐进式行为（工作空间内）：</strong>按第一次 → 清除搜索框内容；按第二次 → 取消当前选中的卡片/列表项；按第三次 → 关闭整个工作空间面板。在搜索框聚焦状态下按 Esc 则直接失焦并关闭建议列表。</div>
                 </li>
                 <li class="flex items-start gap-2">
                     <i class="fa-solid fa-check text-amber-500 mt-1"></i>
-                    <span>在设置、TODO、卡片编辑等<strong>所有模态框</strong>中按 Esc 都可以快速关闭。</span>
+                    <div><strong>数字键 0-9</strong> 在工作空间中可快速切换分类，<kbd class="px-1 py-0.5 bg-white border border-gray-300 rounded text-xs">0</kbd> 对应"全部"，<kbd class="px-1 py-0.5 bg-white border border-gray-300 rounded text-xs">1</kbd>-<kbd class="px-1 py-0.5 bg-white border border-gray-300 rounded text-xs">9</kbd> 对应第 1-9 个分类。超出实际分类数量的数字键无效果。</div>
+                </li>
+                <li class="flex items-start gap-2">
+                    <i class="fa-solid fa-check text-amber-500 mt-1"></i>
+                    <div><strong>方向键导航</strong>在工作空间中支持上下（列表视图）和上下左右（卡片视图）。焦点项有蓝色边框动画跟随，到达列表首尾时自动循环。</div>
+                </li>
+                <li class="flex items-start gap-2">
+                    <i class="fa-solid fa-check text-amber-500 mt-1"></i>
+                    <div><strong>D 键 / Space 键</strong>在工作空间中用于展开/折叠当前选中项的密码信息（仅在已选中某项时生效）。<strong>C 键</strong>复制当前选中项的 URL 到剪贴板，复制成功后显示绿色提示。</div>
+                </li>
+                <li class="flex items-start gap-2">
+                    <i class="fa-solid fa-check text-amber-500 mt-1"></i>
+                    <div>在设置、TODO、卡片编辑等<strong>所有模态框</strong>中按 Esc 都可以快速关闭。TODO 编辑中 <kbd class="px-1 py-0.5 bg-white border border-gray-300 rounded text-xs">Enter</kbd> 保存，<kbd class="px-1 py-0.5 bg-white border border-gray-300 rounded text-xs">Shift</kbd>+<kbd class="px-1 py-0.5 bg-white border border-gray-300 rounded text-xs">Enter</kbd> 换行。</div>
+                </li>
+                <li class="flex items-start gap-2">
+                    <i class="fa-solid fa-check text-amber-500 mt-1"></i>
+                    <div><strong>搜索建议导航：</strong><kbd class="px-1 py-0.5 bg-white border border-gray-300 rounded text-xs">↑</kbd><kbd class="px-1 py-0.5 bg-white border border-gray-300 rounded text-xs">↓</kbd> 键在建议列表中移动选中项（最多 5 条），到达顶部再按 ↑ 或底部再按 ↓ 时循环。按 <kbd class="px-1 py-0.5 bg-white border border-gray-300 rounded text-xs">Enter</kbd> 打开选中建议，未选中时直接执行搜索。</div>
                 </li>
             </ul>
         </div>
@@ -1098,17 +1488,37 @@
                 <div>
                     <h3 class="font-medium text-gray-800 mb-2">待办事项 (Todo) 彩蛋</h3>
                     <ul class="tips-list text-sm text-gray-600 space-y-2">
-                        <li><strong>庆祝特效：</strong>每当你勾选完成一个任务时，鼠标位置会触发粒子烟花庆祝特效。</li>
-                        <li><strong>记事本模式：</strong>点击任务进入编辑，界面会变成横线记事本风格，支持多行文本 (最大 400 字符)。</li>
-                        <li><strong>智能排序：</strong>未完成的任务可自定义排序（拖拽即将上线），已完成的任务自动按时间沉底。</li>
+                        <li><strong>庆祝特效：</strong>每当你勾选完成一个任务时，鼠标位置会触发 20 个彩色粒子抛射动画（5 种随机颜色，受重力影响下落，2 秒消散）。</li>
+                        <li><strong>记事本模式：</strong>点击任务文字进入全屏编辑，界面变成横线记事本风格（楷体字体），支持多行文本（最大 400 字符），实时显示字符计数。</li>
+                        <li><strong>智能排序：</strong>未完成的任务可拖拽排序，已完成的任务自动按时间沉底。</li>
+                        <li><strong>快捷添加：</strong>在搜索框输入 <code>todo: 买牛奶</code> 可直接添加一条待办，无需打开弹窗。添加成功后底部显示绿色提示条。</li>
+                        <li><strong>点击时间打开：</strong>直接点击主页上的时间数字即可打开 Todo 弹窗，无需输入命令。</li>
                     </ul>
                 </div>
                 <div>
                     <h3 class="font-medium text-gray-800 mb-2">壁纸与视觉</h3>
                     <ul class="tips-list text-sm text-gray-600 space-y-2">
-                        <li><strong>全局拖拽上传：</strong>将任意图片文件拖入网页任意位置，即可立即将其设为自定义壁纸。</li>
-                        <li><strong>沉浸模式：</strong>鼠标静止 3 秒后，搜索框和卡片会自动降低透明度或隐藏（取决于设置），只展示精美壁纸。</li>
+                        <li><strong>全局拖拽上传：</strong>将任意图片文件拖入网页任意位置，即可立即将其设为自定义壁纸。无需进入设置。</li>
+                        <li><strong>壁纸收藏：</strong>搜索框聚焦时，右上角出现心形按钮，点击即可收藏当前 Bing 每日壁纸到本地壁纸库。</li>
+                        <li><strong>深色模式：</strong>支持跟随系统、定时切换（默认 22:00-06:00）和手动切换三种方式，壁纸也会自动适配深色滤镜。</li>
                         <li><strong>动态模糊：</strong>所有弹窗背景均采用实时 <code>backdrop-filter: blur()</code> 毛玻璃效果。</li>
+                        <li><strong>慢放效果：</strong>在主页空白区域按住鼠标左键，氛围粒子速度降至 10%（慢动作），松手恢复。切换效果时旧粒子加速飘走退场，新粒子 1.2 秒内逐步补满。</li>
+                        <li><strong>视差暂停：</strong>搜索框聚焦时，壁纸视差效果自动暂停，避免遮罩和视差同时生效导致视觉混乱。</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="mt-6 pt-4 border-t border-blue-100">
+                <h3 class="font-medium text-gray-800 mb-2">搜索框效率技巧</h3>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <ul class="tips-list text-sm text-gray-600 space-y-2">
+                        <li><strong>URL 直达：</strong>输入 <code>localhost:3000</code>、<code>192.168.1.1</code> 或含端口号的内容时，系统自动识别为直达链接而非搜索词，回车直接打开。</li>
+                        <li><strong>Tab 快切引擎：</strong>按 Tab 键在所有已启用的搜索引擎间循环切换，同时触发粒子烟花视觉反馈。</li>
+                        <li><strong>JSONP 搜索建议：</strong>输入中文时通过百度 API 获取实时搜索热词建议（JSONP 技术绕过跨域限制），英文时使用百度 suggestion API。</li>
+                    </ul>
+                    <ul class="tips-list text-sm text-gray-600 space-y-2">
+                        <li><strong>工作空间搜索：</strong>搜索框同时搜索本地卡片和 Notion 工作空间数据，结果分三色区块显示：紫色=网站匹配、蓝色=工作空间匹配、绿色=搜索引擎。</li>
+                        <li><strong>权重排序：</strong>本地卡片搜索基于复杂权重算法：完全匹配 150 分、名称开头 130 分、标签匹配 ×0.8、访问频率最高 +20 分加权。</li>
+                        <li><strong>拼音支持：</strong>输入拼音（全拼或首字母）也能匹配中文卡片名称，匹配文字黄色高亮。</li>
                     </ul>
                 </div>
             </div>
@@ -1131,8 +1541,7 @@
                     <div>
                         <h4 class="font-bold text-gray-800">本地优先架构 (Local-First)</h4>
                         <p class="text-sm text-gray-600 mt-1">
-                            我们的核心架构基于 <strong>IndexedDB</strong> 和
-                            <strong>LocalStorage</strong>。您的搜索历史、未登录状态下的卡片配置、UI 偏好设置等均完全存储在您的浏览器本地数据库中。
+                            我们的核心架构基于 <strong>IndexedDB</strong> 和 <strong>LocalStorage</strong>。您的卡片配置、UI 偏好设置、壁纸缓存、自定义上传壁纸等均完全存储在您的浏览器本地数据库中。即使不登录、不联网，所有功能均可正常使用。
                         </p>
                     </div>
                 </div>
@@ -1145,8 +1554,7 @@
                     <div>
                         <h4 class="font-bold text-gray-800">端到端数据流</h4>
                         <p class="text-sm text-gray-600 mt-1">
-                            当您连接 Notion 时，API 密钥仅保存在您的<strong>浏览器本地存储</strong>中，我们仅作为"客户端"直接与 Notion 官方 API
-                            通信。您的数据流向为：<code>浏览器 <-> Notion API</code>，中间不经过我们的服务器中转。
+                            当您连接 Notion 时，API 密钥仅保存在您的<strong>浏览器本地存储</strong>中，我们仅作为"客户端"直接与 Notion 官方 API 通信。您的数据流向为：<code>浏览器 ↔ Notion API</code>，中间不经过我们的服务器中转。
                         </p>
                     </div>
                 </div>
@@ -1158,11 +1566,42 @@
                     </div>
                     <div>
                         <h4 class="font-bold text-gray-800">完全的数据掌控权</h4>
+                        <div class="mt-3 space-y-3">
+                            <div class="bg-green-50 rounded-lg p-3 border border-green-100">
+                                <h5 class="text-xs font-semibold text-green-700 mb-1">导出数据</h5>
+                                <p class="text-xs text-green-600">
+                                    一键导出为标准 JSON 文件（格式化缩进 2 空格）。文件名格式：<code>我的数据导出_YYYY-MM-DD.json</code>。导出内容包含所有非必要 LocalStorage 键（解析为 JSON 对象）。需先同意 Cookie 政策才可导出。
+                                </p>
+                            </div>
+                            <div class="bg-blue-50 rounded-lg p-3 border border-blue-100">
+                                <h5 class="text-xs font-semibold text-blue-700 mb-1">导入数据</h5>
+                                <p class="text-xs text-blue-600">
+                                    选择之前导出的 <code>.json</code> 文件即可恢复配置。文件类型校验：必须为 <code>.json</code> 扩展名且 MIME 为 <code>application/json</code>。<strong>文件大小限制：5MB</strong>，超出则提示"文件过大"。导入前弹出确认对话框，确认后<strong>覆盖所有现有配置数据</strong>。实现跨设备迁移。
+                                </p>
+                            </div>
+                            <div class="bg-red-50 rounded-lg p-3 border border-red-100">
+                                <h5 class="text-xs font-semibold text-red-700 mb-1">清除所有数据</h5>
+                                <p class="text-xs text-red-600">
+                                    清除浏览器中所有非必要 LocalStorage 数据。<strong>不会清除 IndexedDB</strong>（壁纸缓存等二进制数据仍在）。<strong>始终保留的键：</strong><code>cookie-consent</code>（Cookie 同意状态）和 <code>cookie-consent-date</code>（同意日期），确保合规记录不丢失。清除后页面需刷新生效。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex gap-4">
+                    <div
+                        class="flex-shrink-0 w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center text-amber-600">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-gray-800">云端同步数据流</h4>
                         <p class="text-sm text-gray-600 mt-1">
-                            <strong>导出：</strong>支持将所有配置一键导出为标准 JSON 格式文件，方便迁移或备份。<br>
-                            <strong>擦除：</strong>"清除所有数据"功能会调用 <code>localforage.clear()</code> 和
-                            <code>localStorage.clear()</code>，从物理层面彻底删除浏览器内的所有残留数据。
+                            登录并验证邮箱后，可开启云端同步。数据通过 Supabase 实时存储，同步内容包括卡片列表和全部 UI 设置。详见上方"智能数据同步"章节了解触发条件和冲突解决策略。
                         </p>
+                        <div class="mt-2 bg-gray-50 rounded-lg p-3 text-xs text-gray-500">
+                            <strong>存储层级总结：</strong>LocalStorage（设置偏好、同步状态）→ IndexedDB（壁纸缓存、二进制数据）→ Supabase 云端（登录后同步备份）→ Notion（工作空间数据，独立通道）
+                        </div>
                     </div>
                 </div>
             </div>
