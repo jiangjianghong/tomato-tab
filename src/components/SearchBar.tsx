@@ -1395,11 +1395,9 @@ function SearchBarComponent(props: SearchBarProps = {}) {
 
       // Detect Help related inputs (support Chinese and English)
       if (queryLower === 'help' || queryLower === '帮助' ||
-        queryLower === '帮助页面' || queryLower === '帮助界面') {
-        // Open Workspace Settings in guide mode
-        if (onOpenSettings) {
-          onOpenSettings();
-        }
+        queryLower === '帮助页面' || queryLower === '帮助界面' || queryLower === '指南') {
+        // 打开帮助页面
+        openUrl('/help/');
         setSearchQuery('');
         setShowSuggestions(false);
         setWebsiteSuggestions([]);
