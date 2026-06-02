@@ -49,13 +49,14 @@ export default function AdminDashboard() {
 
             if (usersError) throw usersError;
 
-            // 获取本地时区的今日日期字符串
-            const now = new Date();
-            const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+            // 获取北京时间(Asia/Shanghai)的今日日期字符串，与服务端 aggregate_daily_stats 对齐
+            const beijingDate = (d: Date) =>
+                new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai' }).format(d); // YYYY-MM-DD
+            const today = beijingDate(new Date());
             const { count: newUsersToday, error: newUsersError } = await supabase
                 .from('user_profiles')
                 .select('*', { count: 'exact', head: true })
-                .gte('created_at', `${today}T00:00:00`);
+                .gte('created_at', `${today}T00:00:00+08:00`);
 
             if (newUsersError) throw newUsersError;
 
@@ -66,13 +67,10 @@ export default function AdminDashboard() {
 
             if (statsError) throw statsError;
 
-            // 今日活跃：判断 last_active_at 是否在今天（使用本地时区），或回退到 last_visit_date
+            // 今日活跃：判断 last_active_at 是否在今天（北京时间），或回退到 last_visit_date
             const activeUsersToday = statsData?.filter((s) => {
                 if (s.last_active_at) {
-                    // 将 ISO 时间转换为本地日期进行比较
-                    const activeDate = new Date(s.last_active_at);
-                    const activeLocalDate = `${activeDate.getFullYear()}-${String(activeDate.getMonth() + 1).padStart(2, '0')}-${String(activeDate.getDate()).padStart(2, '0')}`;
-                    return activeLocalDate === today;
+                    return beijingDate(new Date(s.last_active_at)) === today;
                 }
                 return s.last_visit_date === today;
             }).length || 0;

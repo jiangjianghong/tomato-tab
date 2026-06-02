@@ -9,6 +9,8 @@ import {
   sanitizeUserSettings,
   isDataSafeToSync,
   checkDataIntegrity,
+  sanitizeCardClicks,
+  sanitizeHourlyDistribution,
 } from './dataValidator';
 
 // 用户设置接口
@@ -646,6 +648,8 @@ export interface UserStatsData {
   firstUseDate: string;
   lastVisitDate: string;
   lastActiveAt?: string; // 精确活跃时间戳 (ISO 格式)
+  hourlyDistribution?: number[]; // 24 小时活跃分布（新增）
+  streakDays?: number; // 连续使用天数（新增）
 }
 
 // 保存用户统计数据到 Supabase
@@ -670,6 +674,8 @@ export const saveUserStats = async (
             first_use_date: stats.firstUseDate,
             last_visit_date: stats.lastVisitDate,
             last_active_at: stats.lastActiveAt || new Date().toISOString(),
+            hourly_distribution: stats.hourlyDistribution || new Array(24).fill(0),
+            streak_days: stats.streakDays ?? 0,
             last_sync: new Date().toISOString(),
           },
           { onConflict: 'id' }
@@ -679,7 +685,37 @@ export const saveUserStats = async (
     );
 
     if (error) {
-      throw error;
+      // 如果新字段导致错误，回退到基本字段
+      // 注：PostgREST upsert 遇未知列返回 PGRST204；Postgres 直接报 42703
+      if (
+        error.code === '42703' ||
+        error.code === 'PGRST204' ||
+        error.message?.includes('column') ||
+        error.message?.includes('does not exist')
+      ) {
+        logger.sync.warn('user_stats 新字段暂不可用，使用基本字段同步');
+
+        const basicData = {
+          id: user.id,
+          total_site_visits: stats.totalSiteVisits,
+          total_searches: stats.totalSearches,
+          settings_opened: stats.settingsOpened,
+          app_opened: stats.appOpened,
+          card_clicks: stats.cardClicks,
+          first_use_date: stats.firstUseDate,
+          last_visit_date: stats.lastVisitDate,
+          last_active_at: stats.lastActiveAt || new Date().toISOString(),
+          last_sync: new Date().toISOString(),
+        };
+
+        const { error: basicError } = await supabase
+          .from(TABLES.USER_STATS)
+          .upsert(basicData, { onConflict: 'id' });
+
+        if (basicError) throw basicError;
+      } else {
+        throw error;
+      }
     }
 
     logger.sync.info('用户统计数据同步成功');
@@ -714,10 +750,12 @@ export const getUserStats = async (user: User): Promise<UserStatsData | null> =>
         totalSearches: data.total_searches || 0,
         settingsOpened: data.settings_opened || 0,
         appOpened: data.app_opened || 0,
-        cardClicks: data.card_clicks || {},
+        cardClicks: sanitizeCardClicks(data.card_clicks),
         firstUseDate: data.first_use_date || new Date().toISOString().split('T')[0],
         lastVisitDate: data.last_visit_date || new Date().toISOString().split('T')[0],
         lastActiveAt: data.last_active_at || undefined,
+        hourlyDistribution: sanitizeHourlyDistribution(data.hourly_distribution),
+        streakDays: typeof data.streak_days === 'number' && data.streak_days > 0 ? data.streak_days : 0,
       };
     } else {
       logger.sync.debug('用户统计数据不存在');
@@ -742,11 +780,16 @@ export const mergeUserStats = (local: UserStatsData, cloud: UserStatsData): User
     totalSearches: Math.max(local.totalSearches, cloud.totalSearches),
     settingsOpened: Math.max(local.settingsOpened, cloud.settingsOpened),
     appOpened: Math.max(local.appOpened, cloud.appOpened),
-    cardClicks: mergedCardClicks,
+    cardClicks: sanitizeCardClicks(mergedCardClicks),
     // 使用较早的首次使用日期
     firstUseDate: local.firstUseDate < cloud.firstUseDate ? local.firstUseDate : cloud.firstUseDate,
     // 使用较晚的最后访问日期
     lastVisitDate: local.lastVisitDate > cloud.lastVisitDate ? local.lastVisitDate : cloud.lastVisitDate,
+    // 24 小时分布逐元素取最大值，多设备同步不丢数据
+    hourlyDistribution: Array.from({ length: 24 }, (_, i) =>
+      Math.max(local.hourlyDistribution?.[i] || 0, cloud.hourlyDistribution?.[i] || 0)
+    ),
+    streakDays: Math.max(local.streakDays || 0, cloud.streakDays || 0),
   };
 };
 

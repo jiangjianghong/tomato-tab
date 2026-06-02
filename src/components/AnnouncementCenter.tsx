@@ -139,16 +139,14 @@ export default function AnnouncementCenter({ isVisible = true, onOpenChange }: A
             // 获取所有唯一的 user_id
             const userIds = [...new Set((data || []).map(r => r.user_id))];
 
-            // 尝试获取用户 display_name（如果 RLS 允许）
+            // 使用 RPC 获取公开资料（不暴露 email 等敏感信息）
             let userNames: Record<string, string> = {};
             if (userIds.length > 0) {
-                const { data: profiles } = await supabase
-                    .from('user_profiles')
-                    .select('id, display_name')
-                    .in('id', userIds);
+                const { data: profiles, error: profileError } = await supabase
+                    .rpc('get_public_profiles', { p_user_ids: userIds });
 
-                if (profiles) {
-                    profiles.forEach(p => {
+                if (!profileError && profiles) {
+                    profiles.forEach((p: { id: string; display_name: string }) => {
                         userNames[p.id] = p.display_name || '';
                     });
                 }
@@ -188,23 +186,25 @@ export default function AnnouncementCenter({ isVisible = true, onOpenChange }: A
             // 清空输入框并重新加载回复
             setReplyContent('');
 
-            // 重新加载该公告的回复
+            // 重新加载该公告的回复（改为两步查询，不直接读取 user_profiles）
             const { data } = await supabase
                 .from('announcement_replies')
-                .select(`
-                    id,
-                    announcement_id,
-                    user_id,
-                    content,
-                    created_at,
-                    user_profiles:user_id (display_name)
-                `)
+                .select('id, announcement_id, user_id, content, created_at')
                 .eq('announcement_id', announcementId)
                 .order('created_at', { ascending: true });
 
+            // 通过 RPC 获取用户名
+            const replyUserIds = [...new Set((data || []).map(r => r.user_id))];
+            const { data: replyProfiles } = await supabase
+                .rpc('get_public_profiles', { p_user_ids: replyUserIds });
+
+            const replyNameMap = new Map<string, string>(
+                (replyProfiles || []).map((p: { id: string; display_name: string }) => [p.id, p.display_name])
+            );
+
             const formattedReplies = (data || []).map(reply => ({
                 ...reply,
-                user_name: (reply.user_profiles as any)?.display_name || '匿名用户'
+                user_name: replyNameMap.get(reply.user_id) || `用户${reply.user_id.substring(0, 6)}`
             }));
 
             setReplies(prev => ({

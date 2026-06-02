@@ -41,7 +41,21 @@
       "Bash(pnpm lint *)",
       "Bash(ESLINT_USE_FLAT_CONFIG=false npx eslint src/types/searchEngine.ts)",
       "Bash(pnpm build *)",
-      "Bash(git checkout *)"
+      "Bash(git checkout *)",
+      "Bash(npx supabase *)",
+      "Bash(supabase projects *)",
+      "Bash(supabase status *)",
+      "Bash(supabase functions *)",
+      "Bash(timeout 30 supabase migration list)",
+      "Bash(psql --version)",
+      "Bash(supabase db *)",
+      "Bash(cmdkey /list)",
+      "Bash(echo \"=== exit: $? \\(0=找到, 1=没找到\\) ===\")",
+      "Bash(supabase --help)",
+      "Bash(supabase snippets *)",
+      "Bash(supabase inspect *)",
+      "Bash(supabase migration *)",
+      "Bash(echo \"grep 退出码: $? \\(1=没找到=已彻底清除\\)\")"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

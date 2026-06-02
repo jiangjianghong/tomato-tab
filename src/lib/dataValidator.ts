@@ -223,3 +223,54 @@ export const checkDataIntegrity = (
     totalCount: websites.length,
   };
 };
+
+/**
+ * 清理卡片点击数据，防止恶意或损坏数据上传
+ */
+export const sanitizeCardClicks = (cardClicks: any): Record<string, number> => {
+  if (!cardClicks || typeof cardClicks !== 'object' || Array.isArray(cardClicks)) {
+    return {};
+  }
+
+  const MAX_KEY_LENGTH = 100;
+  const MAX_CLICKS = 1_000_000;
+  const MAX_ENTRIES = 500; // 防止恶意构造海量不同 key 膨胀 JSON
+
+  const valid: Array<[string, number]> = [];
+  for (const [key, value] of Object.entries(cardClicks)) {
+    if (typeof key !== 'string' || key.trim().length === 0 || key.length > MAX_KEY_LENGTH) {
+      continue;
+    }
+    if (typeof value !== 'number' || !isFinite(value) || value < 0) {
+      continue;
+    }
+    valid.push([key.trim(), Math.min(Math.floor(value), MAX_CLICKS)]);
+  }
+
+  // 超出条数上限时，保留点击数最高的前 N 个
+  valid.sort((a, b) => b[1] - a[1]);
+
+  const sanitized: Record<string, number> = {};
+  for (const [key, value] of valid.slice(0, MAX_ENTRIES)) {
+    sanitized[key] = value;
+  }
+  return sanitized;
+};
+
+/**
+ * 清理 24 小时活跃分布数组，保证为长度 24 的非负整数数组
+ * （该数组上云后会被 admin 的 get_hourly_activity 聚合，必须防脏数据）
+ */
+export const sanitizeHourlyDistribution = (value: any): number[] => {
+  const result = new Array(24).fill(0);
+  if (!Array.isArray(value)) return result;
+
+  const MAX_PER_HOUR = 10_000_000;
+  for (let i = 0; i < 24; i++) {
+    const v = value[i];
+    if (typeof v === 'number' && isFinite(v) && v >= 0) {
+      result[i] = Math.min(Math.floor(v), MAX_PER_HOUR);
+    }
+  }
+  return result;
+};

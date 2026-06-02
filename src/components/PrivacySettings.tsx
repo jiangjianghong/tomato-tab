@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { storageManager } from '@/lib/storageManager';
 import { useUserStats } from '@/hooks/useUserStats';
+import { supabase } from '@/lib/supabase';
 
 interface PrivacySettingsProps {
   isOpen: boolean;
@@ -11,6 +12,7 @@ interface PrivacySettingsProps {
 export default function PrivacySettings({ isOpen, onClose }: PrivacySettingsProps) {
   const [stats, setStats] = useState(() => storageManager.getStorageStats());
   const [consentStatus, setConsentStatus] = useState(() => storageManager.getConsentStatus());
+  const [clearingSearchLogs, setClearingSearchLogs] = useState(false);
   const { resetStats: resetUserStats } = useUserStats();
 
   useEffect(() => {
@@ -85,6 +87,25 @@ export default function PrivacySettings({ isOpen, onClose }: PrivacySettingsProp
     URL.revokeObjectURL(url);
 
     alert('✅ 数据导出成功！');
+  };
+
+  const handleClearSearchHistory = async () => {
+    const confirmed = confirm(
+      '确认清除搜索历史？\n\n这将删除服务器上记录的所有搜索关键词。\n此操作不可撤销！'
+    );
+    if (!confirmed) return;
+
+    setClearingSearchLogs(true);
+    try {
+      const { data, error } = await supabase.rpc('delete_my_search_logs');
+      if (error) throw error;
+      alert(`已清除 ${data || 0} 条搜索记录`);
+    } catch (err) {
+      console.error('清除搜索历史失败:', err);
+      alert('清除失败，请稍后重试');
+    } finally {
+      setClearingSearchLogs(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -284,6 +305,19 @@ export default function PrivacySettings({ isOpen, onClose }: PrivacySettingsProp
                     <div>
                       <div className="font-medium">重置使用统计</div>
                       <div className="text-sm opacity-75">清除所有访问、搜索统计记录</div>
+                    </div>
+                  </div>
+                </button>
+                <button
+                  onClick={handleClearSearchHistory}
+                  disabled={clearingSearchLogs}
+                  className="w-full p-3 bg-purple-100 hover:bg-purple-200 disabled:bg-gray-100 disabled:text-gray-400 text-purple-800 rounded-lg transition-colors text-left"
+                >
+                  <div className="flex items-center gap-3">
+                    <i className="fa-solid fa-magnifying-glass"></i>
+                    <div>
+                      <div className="font-medium">清除搜索历史</div>
+                      <div className="text-sm opacity-75">删除服务器上记录的所有搜索关键词</div>
                     </div>
                   </div>
                 </button>

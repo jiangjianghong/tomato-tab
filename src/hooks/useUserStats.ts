@@ -7,6 +7,7 @@ import {
   mergeUserStats,
   UserStatsData,
 } from '@/lib/supabaseSync';
+import { sanitizeCardClicks, sanitizeHourlyDistribution } from '@/lib/dataValidator';
 
 // 用户统计数据接口
 export interface UserStats {
@@ -126,9 +127,11 @@ const toCloudFormat = (stats: UserStats, includeActiveAt = false): UserStatsData
   totalSearches: stats.totalSearches,
   settingsOpened: stats.settingsOpened,
   appOpened: stats.appOpened,
-  cardClicks: stats.cardClicks,
+  cardClicks: sanitizeCardClicks(stats.cardClicks),
   firstUseDate: stats.firstUseDate,
   lastVisitDate: stats.lastVisitDate,
+  hourlyDistribution: sanitizeHourlyDistribution(stats.hourlyDistribution),
+  streakDays: stats.streakDays,
   ...(includeActiveAt ? { lastActiveAt: new Date().toISOString() } : {}),
 });
 
@@ -137,9 +140,15 @@ const fromCloudFormat = (cloud: UserStatsData, local: UserStats): UserStats => (
   ...cloud,
   todaySiteVisits: local.todaySiteVisits, // 今日数据只保存在本地
   todaySearches: local.todaySearches,
-  // 24h 分布与连续天数不上云，保留本地值（避免被云端覆盖丢失）
-  hourlyDistribution: local.hourlyDistribution,
-  streakDays: local.streakDays,
+  // 云端有有效数据时采用云端，否则保留本地（避免被空值覆盖丢失）
+  hourlyDistribution:
+    Array.isArray(cloud.hourlyDistribution) && cloud.hourlyDistribution.length === 24
+      ? cloud.hourlyDistribution
+      : local.hourlyDistribution,
+  streakDays:
+    typeof cloud.streakDays === 'number' && cloud.streakDays > 0
+      ? cloud.streakDays
+      : local.streakDays,
 });
 
 // 用户统计 Hook（支持云同步）
