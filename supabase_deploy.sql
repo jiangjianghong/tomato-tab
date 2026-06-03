@@ -70,6 +70,8 @@ CREATE TABLE IF NOT EXISTS user_stats (
   settings_opened INTEGER DEFAULT 0,
   app_opened INTEGER DEFAULT 0,
   card_clicks JSONB DEFAULT '{}'::jsonb,
+  hourly_distribution JSONB DEFAULT '[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]'::jsonb, -- 24小时活跃分布（问题#4）
+  streak_days INTEGER DEFAULT 0, -- 连续使用天数（问题#4）
   first_use_date DATE DEFAULT CURRENT_DATE,
   last_visit_date DATE DEFAULT CURRENT_DATE,
   last_active_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(), -- 精确活跃时间戳
@@ -282,16 +284,21 @@ DROP POLICY IF EXISTS "Admins can read analytics" ON analytics_daily;
 CREATE POLICY "Admins can read analytics" ON analytics_daily FOR SELECT USING (is_admin());
 
 DROP POLICY IF EXISTS "System can insert analytics" ON analytics_daily;
-CREATE POLICY "System can insert analytics" ON analytics_daily FOR INSERT WITH CHECK (true);
+-- 收紧（问题#2）：仅 service_role 可插入；aggregate_daily_stats 为 SECURITY DEFINER 绕过 RLS，
+--   浏览器 anon/authenticated 的 auth.role() 不等于 'service_role'，被挡。
+CREATE POLICY "System can insert analytics" ON analytics_daily FOR INSERT WITH CHECK (auth.role() = 'service_role');
 
--- Allow public read of user profiles (for displaying reply usernames)
--- 允许公开读取用户资料（用于显示公告回复的用户名）
+-- user_profiles 读取策略：仅本人或管理员（修复问题 #1）
+-- 旧版此处为 CREATE POLICY "Anyone can read user profiles" ... USING (true)，会让匿名/任何人
+--   读到全表 email/role。现收紧；公告回复用户名改由下方 get_public_profiles() RPC 提供。
+-- 一并清掉上方 own-only 读策略，以及可能在 Dashboard 手动创建的同类策略，确保最终只剩一条 SELECT 策略。
 DROP POLICY IF EXISTS "Anyone can read user profiles" ON user_profiles;
-CREATE POLICY "Anyone can read user profiles" ON user_profiles FOR SELECT USING (true);
-
--- Admin can read all user profiles (basic info only) - 已被上面的策略覆盖，保留以备参考
--- DROP POLICY IF EXISTS "Admins can read all profiles" ON user_profiles;
--- CREATE POLICY "Admins can read all profiles" ON user_profiles FOR SELECT USING (auth.uid() = id OR is_admin());
+DROP POLICY IF EXISTS "Anyone can read user profiles for replies" ON user_profiles;
+DROP POLICY IF EXISTS "Admins can read basic profiles" ON user_profiles;
+DROP POLICY IF EXISTS "Users can read own profile" ON user_profiles;
+DROP POLICY IF EXISTS "Users can read own profile or admins read all" ON user_profiles;
+CREATE POLICY "Users can read own profile or admins read all" ON user_profiles
+  FOR SELECT USING (auth.uid() = id OR is_admin());
 
 -- Admin can read all user stats
 DROP POLICY IF EXISTS "Admins can read all stats" ON user_stats;
@@ -302,15 +309,17 @@ CREATE POLICY "Admins can read all stats" ON user_stats FOR SELECT USING (auth.u
 
 CREATE OR REPLACE FUNCTION aggregate_daily_stats()
 RETURNS void AS $$
+DECLARE
+  v_today DATE := (NOW() AT TIME ZONE 'Asia/Shanghai')::date; -- 北京时区（问题#7：与前端「今日」口径对齐）
 BEGIN
   INSERT INTO analytics_daily (date, total_users, new_users, active_users, total_searches, total_site_visits)
   SELECT 
-    CURRENT_DATE,
+    v_today,
     (SELECT COUNT(*) FROM user_profiles),
-    (SELECT COUNT(*) FROM user_profiles WHERE created_at::date = CURRENT_DATE),
+    (SELECT COUNT(*) FROM user_profiles WHERE (created_at AT TIME ZONE 'Asia/Shanghai')::date = v_today),
     (SELECT COUNT(*) FROM user_stats WHERE 
-      (last_active_at IS NOT NULL AND last_active_at::date = CURRENT_DATE)
-      OR (last_active_at IS NULL AND last_visit_date = CURRENT_DATE)
+      (last_active_at IS NOT NULL AND (last_active_at AT TIME ZONE 'Asia/Shanghai')::date = v_today)
+      OR (last_active_at IS NULL AND last_visit_date = v_today)
     ),
     (SELECT COALESCE(SUM(total_searches), 0) FROM user_stats),
     (SELECT COALESCE(SUM(total_site_visits), 0) FROM user_stats)
@@ -348,7 +357,7 @@ CREATE INDEX IF NOT EXISTS idx_admin_logs_admin_id ON admin_logs(admin_id);
 -- 10.2 Search Logs (搜索日志表 - 用于热门搜索分析)
 CREATE TABLE IF NOT EXISTS search_logs (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE, -- 删号连带删搜索记录（问题#9；热门搜索会丢这部分历史）
   keyword TEXT NOT NULL,
   search_engine TEXT DEFAULT 'google',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -378,6 +387,15 @@ DROP POLICY IF EXISTS "Admins can read search logs" ON search_logs;
 CREATE POLICY "Admins can read search logs" ON search_logs
   FOR SELECT USING (is_admin());
 
+-- 用户可读取/删除自己的搜索记录（问题#9：搜索历史可删除）
+DROP POLICY IF EXISTS "Users can read own search logs" ON search_logs;
+CREATE POLICY "Users can read own search logs" ON search_logs
+  FOR SELECT USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can delete own search logs" ON search_logs;
+CREATE POLICY "Users can delete own search logs" ON search_logs
+  FOR DELETE USING (auth.uid() = user_id);
+
 -- 12. Admin Analytics Functions (管理分析函数)
 -- ==============================================================================
 
@@ -385,6 +403,11 @@ CREATE POLICY "Admins can read search logs" ON search_logs
 CREATE OR REPLACE FUNCTION get_popular_searches(p_limit INTEGER DEFAULT 10, p_days INTEGER DEFAULT 7)
 RETURNS TABLE (keyword TEXT, count BIGINT) AS $$
 BEGIN
+  -- 守卫（问题#3）：仅管理员可调用
+  IF NOT is_admin() THEN
+    RAISE EXCEPTION 'Permission denied: admin access required';
+  END IF;
+
   RETURN QUERY
   SELECT sl.keyword, COUNT(*) as count
   FROM search_logs sl
@@ -395,18 +418,66 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 获取小时活跃分布
+-- 获取小时活跃分布（重写：聚合 user_stats.hourly_distribution 全天分布，问题#4 admin 侧）
+-- 语义：对最近 p_days 天内活跃的用户，逐小时求和其 24 元素分布数组（原实现仅取每人 last_active_at 那 1 小时）
+-- 守卫：仅管理员；jsonb_typeof 防非数组；正则 ^\d{1,12}$ 防脏数据/溢出（该列用户可写自己行）；h 0..23 防超长数组
 CREATE OR REPLACE FUNCTION get_hourly_activity(p_days INTEGER DEFAULT 7)
 RETURNS TABLE (hour INTEGER, count BIGINT) AS $$
 BEGIN
+  IF NOT is_admin() THEN
+    RAISE EXCEPTION 'Permission denied: admin access required';
+  END IF;
+
   RETURN QUERY
-  SELECT EXTRACT(HOUR FROM last_active_at)::INTEGER as hour, COUNT(*) as count
-  FROM user_stats
-  WHERE last_active_at >= NOW() - (p_days || ' days')::INTERVAL
-  GROUP BY hour
-  ORDER BY hour;
+  SELECT e.h AS hour, SUM(e.c)::BIGINT AS count
+  FROM user_stats us
+  CROSS JOIN LATERAL (
+    SELECT (ord - 1)::INTEGER AS h,
+           CASE WHEN val ~ '^\d{1,12}$' THEN val::BIGINT ELSE 0 END AS c
+    FROM jsonb_array_elements_text(
+      CASE WHEN jsonb_typeof(us.hourly_distribution) = 'array'
+           THEN us.hourly_distribution
+           ELSE '[]'::jsonb END
+    ) WITH ORDINALITY AS t(val, ord)
+  ) e
+  WHERE us.last_active_at >= NOW() - (p_days || ' days')::INTERVAL
+    AND e.h BETWEEN 0 AND 23
+  GROUP BY e.h
+  ORDER BY e.h;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 用户主动删除自己全部搜索记录的 RPC（前端 PrivacySettings「清除搜索历史」调用）— 问题#9
+CREATE OR REPLACE FUNCTION delete_my_search_logs()
+RETURNS INTEGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_count INTEGER;
+BEGIN
+  DELETE FROM search_logs WHERE user_id = auth.uid();
+  GET DIAGNOSTICS v_count = ROW_COUNT;
+  RETURN v_count;
+END;
+$$;
+
+-- 公开资料查询 RPC（公告回复显示用户名）— 问题#1 前置
+-- 仅返回 id 与 display_name，不暴露 email/role；user_profiles 收紧 RLS 后前端改用此函数
+CREATE OR REPLACE FUNCTION get_public_profiles(p_user_ids UUID[])
+RETURNS TABLE (id UUID, display_name TEXT)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT up.id, up.display_name
+  FROM user_profiles up
+  WHERE up.id = ANY(p_user_ids);
+END;
+$$;
+-- 可选：仅允许登录用户调用（屏蔽匿名）
+-- REVOKE EXECUTE ON FUNCTION get_public_profiles(UUID[]) FROM anon;
 
 -- ==============================================================================
 -- Deployment Complete! 部署完成!
@@ -416,7 +487,8 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- - 管理表: user_bans, announcements, default_websites, analytics_daily
 -- - 日志表: admin_logs, search_logs
 -- - 存储桶: favicons, wallpapers
--- - 函数: is_admin(), aggregate_daily_stats(), get_popular_searches(), get_hourly_activity()
+-- - 函数: is_admin(), aggregate_daily_stats(), get_popular_searches(), get_hourly_activity(),
+--         delete_my_search_logs(), get_public_profiles()
 -- ==============================================================================
 
 -- ==============================================================================
