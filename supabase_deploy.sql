@@ -23,11 +23,11 @@ CREATE TABLE IF NOT EXISTS user_profiles (
 CREATE TABLE IF NOT EXISTS user_settings (
   id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
   -- Basic Appearance
-  card_opacity NUMERIC DEFAULT 0.8,
-  search_bar_opacity NUMERIC DEFAULT 0.9,
+  card_opacity NUMERIC DEFAULT 0.1,
+  search_bar_opacity NUMERIC DEFAULT 0.1,
   parallax_enabled BOOLEAN DEFAULT true,
-  wallpaper_resolution TEXT DEFAULT 'high',
-  theme TEXT DEFAULT 'dark',
+  wallpaper_resolution TEXT DEFAULT '1080p',
+  theme TEXT DEFAULT 'light',
   -- Colors
   card_color TEXT DEFAULT '255, 255, 255',
   search_bar_color TEXT DEFAULT '255, 255, 255',
@@ -47,6 +47,21 @@ CREATE TABLE IF NOT EXISTS user_settings (
   show_day BOOLEAN DEFAULT true,
   -- Style
   search_bar_border_radius INTEGER DEFAULT 12,
+  -- Extended Appearance / Behavior (full-sync)
+  date_display_mode TEXT DEFAULT 'yearMonthDay',
+  animation_style TEXT DEFAULT 'simple',
+  work_countdown_enabled BOOLEAN DEFAULT false,
+  lunch_time TEXT DEFAULT '12:00',
+  off_work_time TEXT DEFAULT '18:00',
+  ai_icon_display_mode TEXT DEFAULT 'circular',
+  atmosphere_mode TEXT DEFAULT 'auto',
+  atmosphere_particle_count INTEGER DEFAULT 60,
+  atmosphere_wind_enabled BOOLEAN DEFAULT true,
+  dark_overlay_enabled BOOLEAN DEFAULT false,
+  dark_overlay_mode TEXT DEFAULT 'smart',
+  dark_mode_preference TEXT DEFAULT 'system',
+  dark_mode_schedule_start TEXT DEFAULT '22:00',
+  dark_mode_schedule_end TEXT DEFAULT '06:00',
   -- Meta
   last_sync TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
