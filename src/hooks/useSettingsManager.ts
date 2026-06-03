@@ -23,6 +23,18 @@ interface SettingsData {
   dateDisplayMode: 'yearMonth' | 'yearMonthDay';
   searchBarBorderRadius: number;
   animationStyle: 'dynamic' | 'simple';
+  workCountdownEnabled: boolean;
+  lunchTime: string;
+  offWorkTime: string;
+  aiIconDisplayMode: 'circular' | 'dropdown';
+  atmosphereMode: 'auto' | 'snow' | 'leaf' | 'cherry' | 'firefly' | 'off';
+  atmosphereParticleCount: number;
+  atmosphereWindEnabled: boolean;
+  darkOverlayEnabled: boolean;
+  darkOverlayMode: 'off' | 'always' | 'smart';
+  darkModePreference: 'system' | 'on' | 'off' | 'scheduled';
+  darkModeScheduleStart: string;
+  darkModeScheduleEnd: string;
 }
 
 interface UseSettingsManagerReturn {
@@ -66,6 +78,33 @@ export function useSettingsManager(): UseSettingsManagerReturn {
         animationStyle: (localStorage.getItem('animationStyle') || 'simple') as
           | 'dynamic'
           | 'simple',
+        workCountdownEnabled: localStorage.getItem('workCountdownEnabled') === 'true',
+        lunchTime: localStorage.getItem('lunchTime') || '12:00',
+        offWorkTime: localStorage.getItem('offWorkTime') || '18:00',
+        aiIconDisplayMode: (localStorage.getItem('aiIconDisplayMode') || 'circular') as
+          | 'circular'
+          | 'dropdown',
+        atmosphereMode: (localStorage.getItem('atmosphereMode') || 'auto') as
+          | 'auto'
+          | 'snow'
+          | 'leaf'
+          | 'cherry'
+          | 'firefly'
+          | 'off',
+        atmosphereParticleCount: parseInt(localStorage.getItem('atmosphereParticleCount') || '60'),
+        atmosphereWindEnabled: localStorage.getItem('atmosphereWindEnabled') !== 'false',
+        darkOverlayEnabled: localStorage.getItem('darkOverlayEnabled') === 'true',
+        darkOverlayMode: (localStorage.getItem('darkOverlayMode') || 'smart') as
+          | 'off'
+          | 'always'
+          | 'smart',
+        darkModePreference: (localStorage.getItem('darkModePreference') || 'system') as
+          | 'system'
+          | 'on'
+          | 'off'
+          | 'scheduled',
+        darkModeScheduleStart: localStorage.getItem('darkModeScheduleStart') || '22:00',
+        darkModeScheduleEnd: localStorage.getItem('darkModeScheduleEnd') || '06:00',
       };
     } catch (error) {
       console.warn('导出设置失败，使用默认值:', error);
@@ -91,6 +130,18 @@ export function useSettingsManager(): UseSettingsManagerReturn {
         dateDisplayMode: 'yearMonthDay',
         searchBarBorderRadius: 9999,
         animationStyle: 'simple',
+        workCountdownEnabled: false,
+        lunchTime: '12:00',
+        offWorkTime: '18:00',
+        aiIconDisplayMode: 'circular',
+        atmosphereMode: 'auto',
+        atmosphereParticleCount: 60,
+        atmosphereWindEnabled: true,
+        darkOverlayEnabled: false,
+        darkOverlayMode: 'smart',
+        darkModePreference: 'system',
+        darkModeScheduleStart: '22:00',
+        darkModeScheduleEnd: '06:00',
       };
     }
   }, []);
@@ -221,6 +272,80 @@ export function useSettingsManager(): UseSettingsManagerReturn {
       if (!['dynamic', 'simple'].includes(settings.animationStyle)) {
         errors.push('动画样式设置无效');
       }
+    }
+
+    if (
+      settings.workCountdownEnabled !== undefined &&
+      typeof settings.workCountdownEnabled !== 'boolean'
+    ) {
+      errors.push('下班倒计时设置无效');
+    }
+
+    const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
+    if (settings.lunchTime !== undefined && !TIME_RE.test(settings.lunchTime)) {
+      errors.push('午休时间格式无效');
+    }
+    if (settings.offWorkTime !== undefined && !TIME_RE.test(settings.offWorkTime)) {
+      errors.push('下班时间格式无效');
+    }
+
+    if (
+      settings.aiIconDisplayMode !== undefined &&
+      !['circular', 'dropdown'].includes(settings.aiIconDisplayMode)
+    ) {
+      errors.push('AI 图标显示模式无效');
+    }
+
+    if (
+      settings.atmosphereMode !== undefined &&
+      !['auto', 'snow', 'leaf', 'cherry', 'firefly', 'off'].includes(settings.atmosphereMode)
+    ) {
+      errors.push('氛围效果模式无效');
+    }
+
+    if (settings.atmosphereParticleCount !== undefined) {
+      if (
+        typeof settings.atmosphereParticleCount !== 'number' ||
+        settings.atmosphereParticleCount < 1 ||
+        settings.atmosphereParticleCount > 200
+      ) {
+        errors.push('氛围粒子数量无效（应在 1-200 之间）');
+      }
+    }
+
+    if (
+      settings.atmosphereWindEnabled !== undefined &&
+      typeof settings.atmosphereWindEnabled !== 'boolean'
+    ) {
+      errors.push('风力效果设置无效');
+    }
+
+    if (
+      settings.darkOverlayEnabled !== undefined &&
+      typeof settings.darkOverlayEnabled !== 'boolean'
+    ) {
+      errors.push('黑色遮罩开关无效');
+    }
+
+    if (
+      settings.darkOverlayMode !== undefined &&
+      !['off', 'always', 'smart'].includes(settings.darkOverlayMode)
+    ) {
+      errors.push('黑色遮罩模式无效');
+    }
+
+    if (
+      settings.darkModePreference !== undefined &&
+      !['system', 'on', 'off', 'scheduled'].includes(settings.darkModePreference)
+    ) {
+      errors.push('夜间模式偏好无效');
+    }
+
+    if (settings.darkModeScheduleStart !== undefined && !TIME_RE.test(settings.darkModeScheduleStart)) {
+      errors.push('夜间模式开始时间格式无效');
+    }
+    if (settings.darkModeScheduleEnd !== undefined && !TIME_RE.test(settings.darkModeScheduleEnd)) {
+      errors.push('夜间模式结束时间格式无效');
     }
 
     return {
@@ -411,6 +536,94 @@ export function useSettingsManager(): UseSettingsManagerReturn {
           key: 'animationStyle',
           value: settings.animationStyle,
           label: '动画样式',
+        });
+      }
+
+      if (typeof settings.workCountdownEnabled === 'boolean') {
+        settingsToApply.push({
+          key: 'workCountdownEnabled',
+          value: settings.workCountdownEnabled.toString(),
+          label: '下班倒计时',
+        });
+      }
+
+      if (settings.lunchTime) {
+        settingsToApply.push({ key: 'lunchTime', value: settings.lunchTime, label: '午休时间' });
+      }
+
+      if (settings.offWorkTime) {
+        settingsToApply.push({ key: 'offWorkTime', value: settings.offWorkTime, label: '下班时间' });
+      }
+
+      if (settings.aiIconDisplayMode) {
+        settingsToApply.push({
+          key: 'aiIconDisplayMode',
+          value: settings.aiIconDisplayMode,
+          label: 'AI 图标显示模式',
+        });
+      }
+
+      if (settings.atmosphereMode) {
+        settingsToApply.push({
+          key: 'atmosphereMode',
+          value: settings.atmosphereMode,
+          label: '氛围效果模式',
+        });
+      }
+
+      if (typeof settings.atmosphereParticleCount === 'number') {
+        settingsToApply.push({
+          key: 'atmosphereParticleCount',
+          value: settings.atmosphereParticleCount.toString(),
+          label: '氛围粒子数量',
+        });
+      }
+
+      if (typeof settings.atmosphereWindEnabled === 'boolean') {
+        settingsToApply.push({
+          key: 'atmosphereWindEnabled',
+          value: settings.atmosphereWindEnabled.toString(),
+          label: '风力效果',
+        });
+      }
+
+      if (typeof settings.darkOverlayEnabled === 'boolean') {
+        settingsToApply.push({
+          key: 'darkOverlayEnabled',
+          value: settings.darkOverlayEnabled.toString(),
+          label: '黑色遮罩开关',
+        });
+      }
+
+      if (settings.darkOverlayMode) {
+        settingsToApply.push({
+          key: 'darkOverlayMode',
+          value: settings.darkOverlayMode,
+          label: '黑色遮罩模式',
+        });
+      }
+
+      if (settings.darkModePreference) {
+        settingsToApply.push({
+          key: 'darkModePreference',
+          value: settings.darkModePreference,
+          label: '夜间模式偏好',
+        });
+      }
+
+      if (settings.darkModeScheduleStart) {
+        settingsToApply.push({
+          key: 'darkModeScheduleStart',
+          value: settings.darkModeScheduleStart,
+          label: '夜间模式开始时间',
+        });
+      }
+
+      if (settings.darkModeScheduleEnd) {
+        settingsToApply.push({
+          key: 'darkModeScheduleEnd',
+          value: settings.darkModeScheduleEnd,
+          label: '夜间模式结束时间',
         });
       }
 
