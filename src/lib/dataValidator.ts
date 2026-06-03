@@ -2,6 +2,15 @@
 import { WebsiteData, UserSettings } from './supabaseSync';
 import { WallpaperResolution } from '@/contexts/TransparencyContext';
 
+// HH:mm 时间串校验（00:00–23:59）
+const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
+const sanitizeTime = (v: any, fallback: string): string =>
+  typeof v === 'string' && TIME_RE.test(v) ? v : fallback;
+
+// 枚举值校验，非法回落默认
+const sanitizeEnum = <T extends string>(v: any, allowed: readonly T[], fallback: T): T =>
+  typeof v === 'string' && (allowed as readonly string[]).includes(v) ? (v as T) : fallback;
+
 /**
  * 验证网站数据的有效性
  */
@@ -162,6 +171,47 @@ export const sanitizeUserSettings = (settings: any): UserSettings => {
     showYear: typeof settings.showYear === 'boolean' ? settings.showYear : true,
     showMonth: typeof settings.showMonth === 'boolean' ? settings.showMonth : true,
     showDay: typeof settings.showDay === 'boolean' ? settings.showDay : true,
+    dateDisplayMode: sanitizeEnum(
+      settings.dateDisplayMode,
+      ['yearMonth', 'yearMonthDay'] as const,
+      'yearMonthDay'
+    ),
+    animationStyle: sanitizeEnum(settings.animationStyle, ['dynamic', 'simple'] as const, 'simple'),
+    workCountdownEnabled:
+      typeof settings.workCountdownEnabled === 'boolean' ? settings.workCountdownEnabled : false,
+    lunchTime: sanitizeTime(settings.lunchTime, '12:00'),
+    offWorkTime: sanitizeTime(settings.offWorkTime, '18:00'),
+    aiIconDisplayMode: sanitizeEnum(
+      settings.aiIconDisplayMode,
+      ['circular', 'dropdown'] as const,
+      'circular'
+    ),
+    atmosphereMode: sanitizeEnum(
+      settings.atmosphereMode,
+      ['auto', 'snow', 'leaf', 'cherry', 'firefly', 'off'] as const,
+      'auto'
+    ),
+    atmosphereParticleCount:
+      typeof settings.atmosphereParticleCount === 'number' &&
+      isFinite(settings.atmosphereParticleCount)
+        ? Math.min(200, Math.max(1, Math.floor(settings.atmosphereParticleCount)))
+        : 60,
+    atmosphereWindEnabled:
+      typeof settings.atmosphereWindEnabled === 'boolean' ? settings.atmosphereWindEnabled : true,
+    darkOverlayEnabled:
+      typeof settings.darkOverlayEnabled === 'boolean' ? settings.darkOverlayEnabled : false,
+    darkOverlayMode: sanitizeEnum(
+      settings.darkOverlayMode,
+      ['off', 'always', 'smart'] as const,
+      'smart'
+    ),
+    darkModePreference: sanitizeEnum(
+      settings.darkModePreference,
+      ['system', 'on', 'off', 'scheduled'] as const,
+      'system'
+    ),
+    darkModeScheduleStart: sanitizeTime(settings.darkModeScheduleStart, '22:00'),
+    darkModeScheduleEnd: sanitizeTime(settings.darkModeScheduleEnd, '06:00'),
     searchInNewTab:
       typeof settings.searchInNewTab === 'boolean' ? settings.searchInNewTab : true,
     searchBarBorderRadius:

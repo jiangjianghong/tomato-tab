@@ -34,6 +34,20 @@ export interface UserSettings {
   showMonth?: boolean; // 是否显示月份
   showDay?: boolean; // 是否显示日期
   searchBarBorderRadius?: number; // 搜索框圆角大小（可选，向后兼容）
+  dateDisplayMode?: 'yearMonth' | 'yearMonthDay';
+  animationStyle?: 'dynamic' | 'simple';
+  workCountdownEnabled?: boolean;
+  lunchTime?: string; // HH:mm
+  offWorkTime?: string; // HH:mm
+  aiIconDisplayMode?: 'circular' | 'dropdown';
+  atmosphereMode?: 'auto' | 'snow' | 'leaf' | 'cherry' | 'firefly' | 'off';
+  atmosphereParticleCount?: number;
+  atmosphereWindEnabled?: boolean;
+  darkOverlayEnabled?: boolean;
+  darkOverlayMode?: 'off' | 'always' | 'smart';
+  darkModePreference?: 'system' | 'on' | 'off' | 'scheduled';
+  darkModeScheduleStart?: string; // HH:mm
+  darkModeScheduleEnd?: string; // HH:mm
   lastSync: string;
 }
 
