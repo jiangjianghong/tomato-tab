@@ -146,6 +146,20 @@ export const saveUserSettings = async (
         show_month: validatedSettings.showMonth ?? true,
         show_day: validatedSettings.showDay ?? true,
         search_bar_border_radius: validatedSettings.searchBarBorderRadius ?? 12,
+        date_display_mode: validatedSettings.dateDisplayMode ?? 'yearMonthDay',
+        animation_style: validatedSettings.animationStyle ?? 'simple',
+        work_countdown_enabled: validatedSettings.workCountdownEnabled ?? false,
+        lunch_time: validatedSettings.lunchTime ?? '12:00',
+        off_work_time: validatedSettings.offWorkTime ?? '18:00',
+        ai_icon_display_mode: validatedSettings.aiIconDisplayMode ?? 'circular',
+        atmosphere_mode: validatedSettings.atmosphereMode ?? 'auto',
+        atmosphere_particle_count: validatedSettings.atmosphereParticleCount ?? 60,
+        atmosphere_wind_enabled: validatedSettings.atmosphereWindEnabled ?? true,
+        dark_overlay_enabled: validatedSettings.darkOverlayEnabled ?? false,
+        dark_overlay_mode: validatedSettings.darkOverlayMode ?? 'smart',
+        dark_mode_preference: validatedSettings.darkModePreference ?? 'system',
+        dark_mode_schedule_start: validatedSettings.darkModeScheduleStart ?? '22:00',
+        dark_mode_schedule_end: validatedSettings.darkModeScheduleEnd ?? '06:00',
         last_sync: new Date().toISOString(),
       };
 
@@ -237,6 +251,24 @@ export const getUserSettings = async (user: User): Promise<UserSettings | null> 
         showMonth: data.show_month !== undefined ? data.show_month : true,
         showDay: data.show_day !== undefined ? data.show_day : true,
         searchBarBorderRadius: data.search_bar_border_radius !== undefined ? data.search_bar_border_radius : 12,
+        dateDisplayMode: data.date_display_mode ?? 'yearMonthDay',
+        animationStyle: data.animation_style ?? 'simple',
+        workCountdownEnabled:
+          data.work_countdown_enabled !== undefined ? data.work_countdown_enabled : false,
+        lunchTime: data.lunch_time ?? '12:00',
+        offWorkTime: data.off_work_time ?? '18:00',
+        aiIconDisplayMode: data.ai_icon_display_mode ?? 'circular',
+        atmosphereMode: data.atmosphere_mode ?? 'auto',
+        atmosphereParticleCount:
+          typeof data.atmosphere_particle_count === 'number' ? data.atmosphere_particle_count : 60,
+        atmosphereWindEnabled:
+          data.atmosphere_wind_enabled !== undefined ? data.atmosphere_wind_enabled : true,
+        darkOverlayEnabled:
+          data.dark_overlay_enabled !== undefined ? data.dark_overlay_enabled : false,
+        darkOverlayMode: data.dark_overlay_mode ?? 'smart',
+        darkModePreference: data.dark_mode_preference ?? 'system',
+        darkModeScheduleStart: data.dark_mode_schedule_start ?? '22:00',
+        darkModeScheduleEnd: data.dark_mode_schedule_end ?? '06:00',
         lastSync: data.last_sync,
       };
     } else {
