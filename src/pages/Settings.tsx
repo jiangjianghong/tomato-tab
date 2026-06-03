@@ -228,6 +228,10 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
     setAtmosphereParticleCount,
     atmosphereWindEnabled,
     setAtmosphereWindEnabled,
+    dateDisplayMode,
+    setDateDisplayMode,
+    darkOverlayEnabled,
+    setDarkOverlayEnabled,
     darkOverlayMode,
     setDarkOverlayMode,
     darkMode,
@@ -701,6 +705,20 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
         showMonth,
         showDay,
         searchBarBorderRadius,
+        dateDisplayMode,
+        animationStyle,
+        workCountdownEnabled,
+        lunchTime,
+        offWorkTime,
+        aiIconDisplayMode,
+        atmosphereMode,
+        atmosphereParticleCount,
+        atmosphereWindEnabled,
+        darkOverlayEnabled,
+        darkOverlayMode,
+        darkModePreference,
+        darkModeScheduleStart,
+        darkModeScheduleEnd,
         lastSync: new Date().toISOString(),
       };
 
@@ -757,6 +775,20 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
         setShowMonth(cloudSettings.showMonth ?? true);
         setShowDay(cloudSettings.showDay ?? true);
         setSearchBarBorderRadius(cloudSettings.searchBarBorderRadius ?? 12);
+        setDateDisplayMode(cloudSettings.dateDisplayMode ?? 'yearMonthDay');
+        setAnimationStyle(cloudSettings.animationStyle ?? 'simple');
+        setWorkCountdownEnabled(cloudSettings.workCountdownEnabled ?? false);
+        setLunchTime(cloudSettings.lunchTime ?? '12:00');
+        setOffWorkTime(cloudSettings.offWorkTime ?? '18:00');
+        setAiIconDisplayMode(cloudSettings.aiIconDisplayMode ?? 'circular');
+        setAtmosphereMode(cloudSettings.atmosphereMode ?? 'auto');
+        setAtmosphereParticleCount(cloudSettings.atmosphereParticleCount ?? 60);
+        setAtmosphereWindEnabled(cloudSettings.atmosphereWindEnabled ?? true);
+        setDarkOverlayEnabled(cloudSettings.darkOverlayEnabled ?? false);
+        setDarkOverlayMode(cloudSettings.darkOverlayMode ?? 'smart');
+        setDarkModePreference(cloudSettings.darkModePreference ?? 'system');
+        setDarkModeScheduleStart(cloudSettings.darkModeScheduleStart ?? '22:00');
+        setDarkModeScheduleEnd(cloudSettings.darkModeScheduleEnd ?? '06:00');
 
         localStorage.setItem('theme', cloudSettings.theme || 'light');
       }
