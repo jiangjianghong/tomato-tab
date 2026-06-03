@@ -162,6 +162,14 @@ export const sanitizeUserSettings = (settings: any): UserSettings => {
     showYear: typeof settings.showYear === 'boolean' ? settings.showYear : true,
     showMonth: typeof settings.showMonth === 'boolean' ? settings.showMonth : true,
     showDay: typeof settings.showDay === 'boolean' ? settings.showDay : true,
+    searchInNewTab:
+      typeof settings.searchInNewTab === 'boolean' ? settings.searchInNewTab : true,
+    searchBarBorderRadius:
+      typeof settings.searchBarBorderRadius === 'number' &&
+      settings.searchBarBorderRadius >= 0 &&
+      settings.searchBarBorderRadius <= 50
+        ? settings.searchBarBorderRadius
+        : 12,
     lastSync: typeof settings.lastSync === 'string' ? settings.lastSync : new Date().toISOString(),
   };
 };
