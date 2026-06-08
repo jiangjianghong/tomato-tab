@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, memo } from 'react';
 import { motion } from 'framer-motion';
+import { useDrag, useDrop } from 'react-dnd';
 import CardEditModal from '@/components/CardEditModal';
 import SyncStatusIndicator from '@/components/SyncStatusIndicator';
 import AuthForm from '@/components/AuthForm';
@@ -51,6 +52,59 @@ const SECTIONS = [
   { id: 'data', label: '数据管理', icon: 'fa-database' },
   { id: 'privacy', label: '隐私帮助', icon: 'fa-shield-halved' },
 ];
+
+// AI图标拖拽排序项
+const AI_ICON_SORT_TYPE = 'AI_ICON_SORT';
+interface AiIconSortItemProps {
+  id: string;
+  index: number;
+  name: string;
+  src: string;
+  moveItem: (dragIdx: number, hoverIdx: number) => void;
+}
+
+function AiIconSortItem({ id, index, name, src, moveItem }: AiIconSortItemProps) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  const [{ isDragging }, drag] = useDrag({
+    type: AI_ICON_SORT_TYPE,
+    item: () => ({ id, index }),
+    collect: (monitor) => ({ isDragging: monitor.isDragging() }),
+  });
+
+  const [, drop] = useDrop({
+    accept: AI_ICON_SORT_TYPE,
+    hover(item: { id: string; index: number }) {
+      if (!ref.current) return;
+      const dragIndex = item.index;
+      const hoverIndex = index;
+      if (dragIndex === hoverIndex) return;
+      moveItem(dragIndex, hoverIndex);
+      item.index = hoverIndex;
+    },
+  });
+
+  drag(drop(ref));
+
+  return (
+    <div
+      ref={ref}
+      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border cursor-grab select-none transition-all duration-150 ${isDragging
+        ? 'opacity-40 scale-95 border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-900/30'
+        : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-sm'
+        }`}
+    >
+      <img
+        src={import.meta.env.BASE_URL + src}
+        alt={name}
+        className="w-5 h-5"
+        draggable={false}
+      />
+      <span className="text-xs font-medium text-gray-700 dark:text-gray-200">{name}</span>
+      <i className="fa-solid fa-grip-vertical text-gray-300 dark:text-gray-500 text-[10px] ml-0.5"></i>
+    </div>
+  );
+}
 
 function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: SettingsProps) {
   const { isMobile } = useResponsiveLayout();
@@ -222,6 +276,8 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
     setOffWorkTime,
     aiIconDisplayMode,
     setAiIconDisplayMode,
+    aiIconOrder,
+    setAiIconOrder,
     atmosphereMode,
     setAtmosphereMode,
     atmosphereParticleCount,
@@ -711,6 +767,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
         lunchTime,
         offWorkTime,
         aiIconDisplayMode,
+        aiIconOrder,
         atmosphereMode,
         atmosphereParticleCount,
         atmosphereWindEnabled,
@@ -781,6 +838,9 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
         setLunchTime(cloudSettings.lunchTime ?? '12:00');
         setOffWorkTime(cloudSettings.offWorkTime ?? '18:00');
         setAiIconDisplayMode(cloudSettings.aiIconDisplayMode ?? 'circular');
+        if (cloudSettings.aiIconOrder && Array.isArray(cloudSettings.aiIconOrder)) {
+          setAiIconOrder(cloudSettings.aiIconOrder);
+        }
         setAtmosphereMode(cloudSettings.atmosphereMode ?? 'auto');
         setAtmosphereParticleCount(cloudSettings.atmosphereParticleCount ?? 60);
         setAtmosphereWindEnabled(cloudSettings.atmosphereWindEnabled ?? true);
@@ -1874,6 +1934,50 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                       <i className="fa-solid fa-grip mr-1"></i>
                       面板
                     </button>
+                  </div>
+                </div>
+
+                {/* AI图标排序 */}
+                <div className="border-t border-gray-100 dark:border-gray-700"></div>
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <i className="fa-solid fa-sort text-blue-500 text-sm"></i>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-200 select-none">
+                      AI图标排序
+                    </span>
+                    <span className="text-xs text-gray-400 dark:text-gray-500 select-none">拖拽调整顺序</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {aiIconOrder.map((id, index) => {
+                      const ICON_MAP: Record<string, { name: string; src: string }> = {
+                        chatGPT: { name: 'ChatGPT', src: 'icon/chatgpt.svg' },
+                        Gemini: { name: 'Gemini', src: 'icon/gemini.svg' },
+                        Deepseek: { name: 'Deepseek', src: 'icon/deepseek.svg' },
+                        Kimi: { name: 'Kimi', src: 'icon/kimi.svg' },
+                        Grok: { name: 'Grok', src: 'icon/grok.svg' },
+                        Claude: { name: 'Claude', src: 'icon/claude.svg' },
+                        Mimo: { name: 'Mimo', src: 'icon/mimo.svg' },
+                        Zhipu: { name: 'Zhipu', src: 'icon/zhipu.svg' },
+                        Qwen: { name: 'Qwen', src: 'icon/qwen.svg' },
+                      };
+                      const info = ICON_MAP[id];
+                      if (!info) return null;
+                      return (
+                        <AiIconSortItem
+                          key={id}
+                          id={id}
+                          index={index}
+                          name={info.name}
+                          src={info.src}
+                          moveItem={(dragIdx: number, hoverIdx: number) => {
+                            const newOrder = [...aiIconOrder];
+                            const [removed] = newOrder.splice(dragIdx, 1);
+                            newOrder.splice(hoverIdx, 0, removed);
+                            setAiIconOrder(newOrder);
+                          }}
+                        />
+                      );
+                    })}
                   </div>
                 </div>
               </div>

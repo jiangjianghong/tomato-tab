@@ -78,6 +78,7 @@ interface TransparencyContextType {
   setLunchTime: (time: string) => void;
   setOffWorkTime: (time: string) => void;
   setAiIconDisplayMode: (mode: 'circular' | 'dropdown') => void;
+  setAiIconOrder: (order: string[]) => void;
   setAtmosphereMode: (mode: 'auto' | 'snow' | 'leaf' | 'cherry' | 'firefly' | 'off') => void;
   setAtmosphereParticleCount: (count: number) => void;
   setAtmosphereWindEnabled: (enabled: boolean) => void;
@@ -237,6 +238,19 @@ export function TransparencyProvider({ children }: { children: ReactNode }) {
   const [aiIconDisplayMode, setAiIconDisplayMode] = useState<'circular' | 'dropdown'>(() => {
     const saved = localStorage.getItem('aiIconDisplayMode') as 'circular' | 'dropdown';
     return saved || 'circular'; // 默认圆形布局
+  });
+
+  // AI图标排序顺序
+  const DEFAULT_AI_ICON_ORDER = ['chatGPT', 'Gemini', 'Deepseek', 'Kimi', 'Grok', 'Claude', 'Mimo', 'Zhipu', 'Qwen'];
+  const [aiIconOrder, setAiIconOrder] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('aiIconOrder');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch { /* ignore */ }
+    return DEFAULT_AI_ICON_ORDER;
   });
 
   // 氛围效果模式（自动/雪花/落叶/樱花/萤火虫/关闭）
@@ -466,6 +480,10 @@ export function TransparencyProvider({ children }: { children: ReactNode }) {
   }, [aiIconDisplayMode]);
 
   useEffect(() => {
+    localStorage.setItem('aiIconOrder', JSON.stringify(aiIconOrder));
+  }, [aiIconOrder]);
+
+  useEffect(() => {
     localStorage.setItem('atmosphereMode', atmosphereMode);
   }, [atmosphereMode]);
 
@@ -532,6 +550,7 @@ export function TransparencyProvider({ children }: { children: ReactNode }) {
     lunchTime,
     offWorkTime,
     aiIconDisplayMode,
+    aiIconOrder,
     atmosphereMode,
     atmosphereParticleCount,
     atmosphereWindEnabled,
@@ -568,6 +587,7 @@ export function TransparencyProvider({ children }: { children: ReactNode }) {
     setLunchTime,
     setOffWorkTime,
     setAiIconDisplayMode,
+    setAiIconOrder,
     setAtmosphereMode,
     setAtmosphereParticleCount,
     setAtmosphereWindEnabled,
@@ -580,7 +600,7 @@ export function TransparencyProvider({ children }: { children: ReactNode }) {
   }), [
     cardOpacity, searchBarOpacity, parallaxEnabled, wallpaperResolution, isSettingsOpen, isSearchFocused, cardColor, searchBarColor,
     autoSyncEnabled, autoSyncInterval, searchInNewTab, autoSortEnabled, timeComponentEnabled, showFullDate, showSeconds, showWeekday,
-    showYear, showMonth, showDay, dateDisplayMode, searchBarBorderRadius, animationStyle, workCountdownEnabled, lunchTime, offWorkTime, aiIconDisplayMode, atmosphereMode, atmosphereParticleCount, atmosphereWindEnabled, darkOverlayEnabled, darkOverlayMode, darkMode, darkModePreference, darkModeScheduleStart, darkModeScheduleEnd, isSlowMotion
+    showYear, showMonth, showDay, dateDisplayMode, searchBarBorderRadius, animationStyle, workCountdownEnabled, lunchTime, offWorkTime, aiIconDisplayMode, aiIconOrder, atmosphereMode, atmosphereParticleCount, atmosphereWindEnabled, darkOverlayEnabled, darkOverlayMode, darkMode, darkModePreference, darkModeScheduleStart, darkModeScheduleEnd, isSlowMotion
   ]);
 
   return (

@@ -43,7 +43,7 @@ function SearchBarComponent(props: SearchBarProps = {}) {
   const inputRef = useRef<HTMLInputElement>(null);
   const engineButtonRef = useRef<HTMLButtonElement>(null);
   const [isFocused, setIsFocused] = useState(false);
-  const { searchBarOpacity, searchBarColor, setIsSearchFocused, searchInNewTab, isSettingsOpen, searchBarBorderRadius, animationStyle, aiIconDisplayMode, darkMode } =
+  const { searchBarOpacity, searchBarColor, setIsSearchFocused, searchInNewTab, isSettingsOpen, searchBarBorderRadius, animationStyle, aiIconDisplayMode, aiIconOrder, darkMode } =
     useTransparency();
   const { isMobile } = useResponsiveLayout();
   const { isWorkspaceOpen, setIsWorkspaceOpen, workspaceItems } = useWorkspace();
@@ -314,27 +314,31 @@ function SearchBarComponent(props: SearchBarProps = {}) {
   };
 
   // 表情名称和图标 - 双层布局：内圈4个 + 外圈5个
-  const emojiNames = [
-    // 内圈（原有4个）
-    'chatGPT', 'Gemini', 'Deepseek', 'Kimi',
-    // 外圈（5个，30°间隔）
-    'Grok', 'Claude', 'Mimo', 'Zhipu', 'Qwen'
-  ];
-  const emojiLinks = [
-    // 内圈
-    'https://chatgpt.com/',
-    'https://gemini.google.com/',
-    'https://chat.deepseek.com/',
-    'https://www.kimi.com/',
-    // 外圈
-    'https://grok.x.ai/',
-    'https://claude.ai/',
-    'https://mimo.ai/',
-    'https://chatglm.cn/',
-    'https://tongyi.com/',
-  ];
-  const emojiList = [
+  const AI_ICON_DATA: Record<string, { name: string; link: string; icon: string }> = {
+    chatGPT: { name: 'chatGPT', link: 'https://chatgpt.com/', icon: 'icon/chatgpt.svg' },
+    Gemini: { name: 'Gemini', link: 'https://gemini.google.com/', icon: 'icon/gemini.svg' },
+    Deepseek: { name: 'Deepseek', link: 'https://chat.deepseek.com/', icon: 'icon/deepseek.svg' },
+    Kimi: { name: 'Kimi', link: 'https://www.kimi.com/', icon: 'icon/kimi.svg' },
+    Grok: { name: 'Grok', link: 'https://grok.x.ai/', icon: 'icon/grok.svg' },
+    Claude: { name: 'Claude', link: 'https://claude.ai/', icon: 'icon/claude.svg' },
+    Mimo: { name: 'Mimo', link: 'https://mimo.ai/', icon: 'icon/mimo.svg' },
+    Zhipu: { name: 'Zhipu', link: 'https://chatglm.cn/', icon: 'icon/zhipu.svg' },
+    Qwen: { name: 'Qwen', link: 'https://tongyi.com/', icon: 'icon/qwen.svg' },
+  };
+
+  // 根据 aiIconOrder 生成排序后的数组
+  const orderedIcons = useMemo(() =>
+    aiIconOrder
+      .filter(id => AI_ICON_DATA[id])
+      .map(id => ({ id, ...AI_ICON_DATA[id] })),
+    [aiIconOrder]
+  );
+
+  const emojiNames = useMemo(() => orderedIcons.map(o => o.name), [orderedIcons]);
+  const emojiLinks = useMemo(() => orderedIcons.map(o => o.link), [orderedIcons]);
+  const emojiList = useMemo(() => orderedIcons.map((o) => (
     <span
+      key={o.id}
       style={{
         display: 'inline-flex',
         alignItems: 'center',
@@ -348,166 +352,12 @@ function SearchBarComponent(props: SearchBarProps = {}) {
       }}
     >
       <img
-        src={import.meta.env.BASE_URL + 'icon/chatgpt.svg'}
-        alt="chatGPT"
+        src={import.meta.env.BASE_URL + o.icon}
+        alt={o.name}
         style={{ width: 20, height: 20, display: 'block', userSelect: 'none' }}
       />
-    </span>,
-    <span
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: 22,
-        height: 22,
-        verticalAlign: 'middle',
-        position: 'relative',
-        top: '1px',
-        userSelect: 'none',
-      }}
-    >
-      <img
-        src={import.meta.env.BASE_URL + 'icon/gemini.svg'}
-        alt="Gemini"
-        style={{ width: 20, height: 20, display: 'block', userSelect: 'none' }}
-      />
-    </span>,
-    <span
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: 22,
-        height: 22,
-        verticalAlign: 'middle',
-        position: 'relative',
-        top: '1px',
-        userSelect: 'none',
-      }}
-    >
-      <img
-        src={import.meta.env.BASE_URL + 'icon/deepseek.svg'}
-        alt="Deepseek"
-        style={{ width: 20, height: 20, display: 'block', userSelect: 'none' }}
-      />
-    </span>,
-    <span
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: 22,
-        height: 22,
-        verticalAlign: 'middle',
-        position: 'relative',
-        top: '1px',
-        userSelect: 'none',
-      }}
-    >
-      <img
-        src={import.meta.env.BASE_URL + 'icon/kimi.svg'}
-        alt="Kimi"
-        style={{ width: 20, height: 20, display: 'block', userSelect: 'none' }}
-      />
-    </span>,
-    // 外圈新增图标
-    <span
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: 22,
-        height: 22,
-        verticalAlign: 'middle',
-        position: 'relative',
-        top: '1px',
-        userSelect: 'none',
-      }}
-    >
-      <img
-        src={import.meta.env.BASE_URL + 'icon/grok.svg'}
-        alt="Grok"
-        style={{ width: 20, height: 20, display: 'block', userSelect: 'none' }}
-      />
-    </span>,
-    <span
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: 22,
-        height: 22,
-        verticalAlign: 'middle',
-        position: 'relative',
-        top: '1px',
-        userSelect: 'none',
-      }}
-    >
-      <img
-        src={import.meta.env.BASE_URL + 'icon/claude.svg'}
-        alt="Claude"
-        style={{ width: 20, height: 20, display: 'block', userSelect: 'none' }}
-      />
-    </span>,
-    // 外圈新增 Mimo
-    <span
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: 22,
-        height: 22,
-        verticalAlign: 'middle',
-        position: 'relative',
-        top: '1px',
-        userSelect: 'none',
-      }}
-    >
-      <img
-        src={import.meta.env.BASE_URL + 'icon/mimo.svg'}
-        alt="Mimo"
-        style={{ width: 20, height: 20, display: 'block', userSelect: 'none' }}
-      />
-    </span>,
-    <span
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: 22,
-        height: 22,
-        verticalAlign: 'middle',
-        position: 'relative',
-        top: '1px',
-        userSelect: 'none',
-      }}
-    >
-      <img
-        src={import.meta.env.BASE_URL + 'icon/zhipu.svg'}
-        alt="Zhipu"
-        style={{ width: 20, height: 20, display: 'block', userSelect: 'none' }}
-      />
-    </span>,
-    <span
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: 22,
-        height: 22,
-        verticalAlign: 'middle',
-        position: 'relative',
-        top: '1px',
-        userSelect: 'none',
-      }}
-    >
-      <img
-        src={import.meta.env.BASE_URL + 'icon/qwen.svg'}
-        alt="Qwen"
-        style={{ width: 20, height: 20, display: 'block', userSelect: 'none' }}
-      />
-    </span>,
-  ];
+    </span>
+  )), [orderedIcons]);
 
   // 执行搜索并记录统计
   const performSearchWithStats = (query: string) => {

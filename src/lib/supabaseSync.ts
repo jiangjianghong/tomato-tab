@@ -40,6 +40,7 @@ export interface UserSettings {
   lunchTime?: string; // HH:mm
   offWorkTime?: string; // HH:mm
   aiIconDisplayMode?: 'circular' | 'dropdown';
+  aiIconOrder?: string[];
   atmosphereMode?: 'auto' | 'snow' | 'leaf' | 'cherry' | 'firefly' | 'off';
   atmosphereParticleCount?: number;
   atmosphereWindEnabled?: boolean;
