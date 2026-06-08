@@ -41,6 +41,7 @@ interface TransparencyContextType {
   lunchTime: string; // 午休时间 HH:mm
   offWorkTime: string; // 下班时间 HH:mm
   aiIconDisplayMode: 'circular' | 'dropdown'; // AI图标显示模式：圆形布局或下拉面板
+  aiIconOrder: string[]; // AI图标排序顺序（存储图标ID数组）
   atmosphereMode: 'auto' | 'snow' | 'leaf' | 'cherry' | 'firefly' | 'off'; // 氛围效果模式
   atmosphereParticleCount: number; // 氛围效果粒子数量
   atmosphereWindEnabled: boolean; // 风力效果开关

@@ -313,12 +313,12 @@ function SearchBarComponent(props: SearchBarProps = {}) {
     }
   };
 
-  // 表情名称和图标 - 双层布局：内圈4个 + 外圈4个
+  // 表情名称和图标 - 双层布局：内圈4个 + 外圈5个
   const emojiNames = [
     // 内圈（原有4个）
     'chatGPT', 'Gemini', 'Deepseek', 'Kimi',
-    // 外圈（新增4个）
-    'Grok', 'Claude', 'Zhipu', 'Qwen'
+    // 外圈（5个，30°间隔）
+    'Grok', 'Claude', 'Mimo', 'Zhipu', 'Qwen'
   ];
   const emojiLinks = [
     // 内圈
@@ -329,6 +329,7 @@ function SearchBarComponent(props: SearchBarProps = {}) {
     // 外圈
     'https://grok.x.ai/',
     'https://claude.ai/',
+    'https://mimo.ai/',
     'https://chatglm.cn/',
     'https://tongyi.com/',
   ];
@@ -445,6 +446,26 @@ function SearchBarComponent(props: SearchBarProps = {}) {
       <img
         src={import.meta.env.BASE_URL + 'icon/claude.svg'}
         alt="Claude"
+        style={{ width: 20, height: 20, display: 'block', userSelect: 'none' }}
+      />
+    </span>,
+    // 外圈新增 Mimo
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: 22,
+        height: 22,
+        verticalAlign: 'middle',
+        position: 'relative',
+        top: '1px',
+        userSelect: 'none',
+      }}
+    >
+      <img
+        src={import.meta.env.BASE_URL + 'icon/mimo.svg'}
+        alt="Mimo"
         style={{ width: 20, height: 20, display: 'block', userSelect: 'none' }}
       />
     </span>,
@@ -2203,15 +2224,15 @@ function SearchBarComponent(props: SearchBarProps = {}) {
                   >
                     <div style={{ position: 'absolute', left: 0, top: 0 }}>
                       {emojiList.map((emoji, i) => {
-                        // 双层布局：前4个为内圈，后4个为外圈
+                        // 双层布局：前4个为内圈，后5个为外圈
                         const isInnerCircle = i < 4; // 前4个是内圈
-                        const N = isInnerCircle ? 4 : 4; // 每层4个图标
+                        const N = isInnerCircle ? 4 : 5; // 内圈4个，外圈5个
                         const layerIndex = isInnerCircle ? i : i - 4; // 当前层的索引
 
                         // 内圈半径44px，外圈半径75px
                         const r = isInnerCircle ? 44 : 75;
 
-                        // -60°到60°扇形分布
+                        // -60°到60°扇形分布（内圈40°间隔，外圈30°间隔）
                         const angle = (-60 + (120 / (N - 1)) * layerIndex) * (Math.PI / 180);
                         const x = r * Math.cos(angle);
                         const y = r * Math.sin(angle);
