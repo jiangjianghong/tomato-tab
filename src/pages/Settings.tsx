@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, memo } from 'react';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 import { useDrag, useDrop } from 'react-dnd';
 import CardEditModal from '@/components/CardEditModal';
 import SyncStatusIndicator from '@/components/SyncStatusIndicator';
@@ -133,7 +134,8 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
   const [showWallpaperGallery, setShowWallpaperGallery] = useState(false);
   const [activeSection, setActiveSection] = useState('account');
   const sectionsRef = useRef<{ [key: string]: HTMLDivElement | null }>({});
-  const isManualScrolling = useRef(false);
+  // 标记是否由导航按钮触发的滚动（此时 Observer 不应覆盖 activeSection）
+  const isNavScrolling = useRef(false);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const scrollToSection = (id: string) => {
@@ -141,8 +143,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
     const container = document.getElementById('settings-content-scroll-container');
 
     if (element && container) {
-      // 设置手动滚动标志
-      isManualScrolling.current = true;
+      isNavScrolling.current = true;
       if (scrollTimeoutRef.current) {
         clearTimeout(scrollTimeoutRef.current);
       }
@@ -150,51 +151,36 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
       // 立即更新 active 状态
       setActiveSection(id);
 
-      // 自定义滚动逻辑
-      const start = container.scrollTop;
-      // 计算目标位置：元素的相对位置 + 当前滚动位置 - 顶部偏移（如果有padding）
-      // 这里直接使用 offsetTop 可能不准，改用 getBoundingClientRect 计算相对差值
-      const elementRect = element.getBoundingClientRect();
+      // 用浏览器原生 scrollTo 计算并执行滚动
+      const offset = 32;
+      const rect = element.getBoundingClientRect();
       const containerRect = container.getBoundingClientRect();
-      const relativeTop = elementRect.top - containerRect.top;
-      const offset = 32; // 顶部留出 32px 的间距
-      const target = start + relativeTop - offset;
-      const distance = target - start;
-      const duration = 1200; // 更长的持续时间，1.2秒
-      let startTime: number | null = null;
+      const target = container.scrollTop + (rect.top - containerRect.top) - offset;
 
-      // 缓动函数: easeInOutCubic (先加速后减速)
-      const easeInOutCubic = (t: number) => {
-        return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      container.scrollTo({ top: target, behavior: 'smooth' });
+
+      // 滚动结束后释放导航锁，并重申正确的 activeSection
+      const releaseLock = () => {
+        // 先重申正确 section，再释放锁（Observer 回调是微任务，不会插入这两行之间）
+        setActiveSection(id);
+        isNavScrolling.current = false;
       };
 
-      const animation = (currentTime: number) => {
-        if (startTime === null) startTime = currentTime;
-        const timeElapsed = currentTime - startTime;
-        const progress = Math.min(timeElapsed / duration, 1);
-        const ease = easeInOutCubic(progress);
-
-        container.scrollTop = start + distance * ease;
-
-        if (timeElapsed < duration) {
-          requestAnimationFrame(animation);
-        } else {
-          // 动画结束，稍微延迟后释放锁，防止惯性误触
-          scrollTimeoutRef.current = setTimeout(() => {
-            isManualScrolling.current = false;
-          }, 100);
-        }
-      };
-
-      requestAnimationFrame(animation);
+      container.addEventListener('scrollend', releaseLock, { once: true });
+      scrollTimeoutRef.current = setTimeout(() => {
+        container.removeEventListener('scrollend', releaseLock);
+        releaseLock();
+      }, 2000);
     }
   };
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
+        // 导航按钮触发的滚动期间，不更新 activeSection
+        if (isNavScrolling.current) return;
         entries.forEach((entry) => {
-          if (entry.isIntersecting && !isManualScrolling.current) {
+          if (entry.isIntersecting) {
             setActiveSection(entry.target.id);
           }
         });
@@ -344,11 +330,11 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
       e.preventDefault();
       dragCounter++;
 
-      // 检查是否拖拽的是图片文件
+      // 检查是否拖拽的是图片或视频文件
       const items = Array.from(e.dataTransfer?.items || []);
-      const hasImageFile = items.some((item) => item.type.startsWith('image/'));
+      const hasMediaFile = items.some((item) => item.type.startsWith('image/') || item.type === 'video/mp4');
 
-      if (hasImageFile && !uploadingWallpaper) {
+      if (hasMediaFile && !uploadingWallpaper) {
         setIsGlobalDragOver(true);
       }
     };
@@ -395,20 +381,16 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
       const result = await customWallpaperManager.uploadWallpaper(file);
 
       if (result.success && result.id) {
-        setSyncMessage('✅ 自定义壁纸上传成功！页面即将刷新...');
-
-        // 延迟后刷新页面以应用新壁纸
+        toast.success('壁纸上传成功，即将刷新...');
         setTimeout(() => {
           window.location.reload();
         }, 500);
       } else {
-        setSyncMessage(result.error || '上传失败');
-        setTimeout(() => setSyncMessage(''), 3000);
+        toast.error(result.error || '上传失败');
         setUploadingWallpaper(false);
       }
     } catch (error) {
-      setSyncMessage('上传失败，请重试');
-      setTimeout(() => setSyncMessage(''), 3000);
+      toast.error('上传失败，请重试');
       setUploadingWallpaper(false);
     }
   };
@@ -461,13 +443,16 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
     if (uploadingWallpaper) return;
 
     const files = Array.from(e.dataTransfer.files);
-    const imageFile = files.find((file) => file.type.startsWith('image/'));
+    const mediaFile = files.find((file) => {
+      const ext = file.name.split('.').pop()?.toLowerCase();
+      return file.type.startsWith('image/') || file.type === 'video/mp4'
+        || ['jpg', 'jpeg', 'png', 'webp', 'mp4'].includes(ext || '');
+    });
 
-    if (imageFile) {
-      await processWallpaperFile(imageFile);
+    if (mediaFile) {
+      await processWallpaperFile(mediaFile);
     } else {
-      setSyncMessage('请拖拽图片文件 (JPG、PNG、WebP)');
-      setTimeout(() => setSyncMessage(''), 3000);
+      toast.error('请拖拽图片 (JPG、PNG、WebP) 或视频 (MP4) 文件');
     }
   };
 
@@ -1541,8 +1526,8 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                           <i className="fa-solid fa-info-circle text-gray-400 text-xs cursor-help"></i>
                           <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
                             <div className="space-y-1">
-                              <div>• 支持 JPG、PNG、WebP 格式</div>
-                              <div>• 文件大小不超过 10MB</div>
+                              <div>• 图片：JPG、PNG、WebP，≤ 10MB</div>
+                              <div>• 视频：MP4，≤ 100MB</div>
                               <div>• 图片会自动压缩优化</div>
                               {customWallpaperInfo.exists && (
                                 <div>• 当前壁纸: {customWallpaperInfo.sizeText}</div>
@@ -1557,7 +1542,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                       <div className="flex gap-3">
                         <input
                           type="file"
-                          accept="image/jpeg,image/png,image/webp"
+                          accept=".jpg,.jpeg,.png,.webp,.mp4"
                           onChange={handleWallpaperUpload}
                           className="hidden"
                           id="wallpaper-upload"
@@ -1596,7 +1581,7 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                                 <>
                                   <i className="fa-solid fa-cloud-upload-alt text-2xl mb-1"></i>
                                   <div>点击或拖拽上传壁纸</div>
-                                  <div className="text-xs text-gray-400 font-normal">支持 JPG, PNG, WebP</div>
+                                  <div className="text-xs text-gray-400 font-normal">图片 ≤10MB · 视频 ≤100MB</div>
                                 </>
                               )}
                             </div>
@@ -2565,6 +2550,14 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                             </div>
                           )}
 
+                          {/* 视频角标 */}
+                          {wallpaper.metadata.type === 'video' && (
+                            <div className="absolute top-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                              <i className="fa-solid fa-film"></i>
+                              <span>视频</span>
+                            </div>
+                          )}
+
                           {/* 悬浮操作按钮 */}
                           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-200 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
                             {/* 预览 */}
@@ -2661,23 +2654,35 @@ function SettingsComponent({ onClose, websites, setWebsites, onSettingsClose }: 
                 <i className="fa-solid fa-xmark text-3xl"></i>
               </button>
 
-              {/* 预览图片 */}
+              {/* 预览内容 */}
               {loadingPreview ? (
                 <div className="flex items-center justify-center w-96 h-64 bg-gray-800 rounded-xl">
                   <div className="text-center text-white">
                     <i className="fa-solid fa-spinner fa-spin text-4xl mb-4"></i>
-                    <p className="text-lg">正在加载原图...</p>
+                    <p className="text-lg">正在加载预览...</p>
                   </div>
                 </div>
               ) : previewWallpaper ? (
                 <>
-                  <img
-                    src={previewWallpaper.fullImageUrl}
-                    alt={previewWallpaper.metadata.name}
-                    className="max-w-full max-h-[80vh] rounded-xl shadow-2xl"
-                  />
+                  {previewWallpaper.metadata.type === 'video' ? (
+                    <video
+                      src={previewWallpaper.fullImageUrl}
+                      className="max-w-full max-h-[80vh] rounded-xl shadow-2xl"
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      controls
+                    />
+                  ) : (
+                    <img
+                      src={previewWallpaper.fullImageUrl}
+                      alt={previewWallpaper.metadata.name}
+                      className="max-w-full max-h-[80vh] rounded-xl shadow-2xl"
+                    />
+                  )}
 
-                  {/* 图片信息 */}
+                  {/* 壁纸信息 */}
                   <div className="mt-4 bg-white/90 backdrop-blur-sm rounded-lg p-4 flex items-center justify-between">
                     <div>
                       <div className="text-sm font-medium text-gray-800">

@@ -13,6 +13,7 @@ export interface WallpaperMetadata {
   width: number;
   height: number;
   sourceUrl?: string; // 原始URL（用于收藏功能判重）
+  type?: 'image' | 'video'; // 壁纸类型，默认 'image'（兼容旧数据）
 }
 
 // 壁纸数据接口（包含原图和缩略图）
@@ -28,8 +29,10 @@ class CustomWallpaperManager {
   private readonly WALLPAPER_LIST_KEY = 'custom-wallpaper-list';
   private readonly CURRENT_WALLPAPER_KEY = 'current-custom-wallpaper-id';
   private readonly THUMBNAIL_PREFIX = 'custom-wallpaper-thumb-';
-  private readonly MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-  private readonly ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+  private readonly MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
+  private readonly MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100MB
+  private readonly ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'video/mp4'];
+  private readonly ALLOWED_VIDEO_TYPES = ['video/mp4'];
   private readonly THUMBNAIL_SIZE = 300; // 缩略图宽度
 
   static getInstance(): CustomWallpaperManager {
@@ -39,19 +42,35 @@ class CustomWallpaperManager {
     return CustomWallpaperManager.instance;
   }
 
+  // 通过扩展名推断类型（兜底，Windows 下 file.type 可能为空）
+  private inferType(file: File): string {
+    if (file.type) return file.type;
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    const extMap: Record<string, string> = {
+      jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png',
+      webp: 'image/webp', mp4: 'video/mp4',
+    };
+    return extMap[ext || ''] || '';
+  }
+
   // 验证文件
   validateFile(file: File): { valid: boolean; error?: string } {
-    if (!this.ALLOWED_TYPES.includes(file.type)) {
+    const mimeType = this.inferType(file);
+
+    if (!this.ALLOWED_TYPES.includes(mimeType)) {
       return {
         valid: false,
-        error: '仅支持 JPG、PNG、WebP 格式的图片',
+        error: '仅支持 JPG、PNG、WebP 图片和 MP4 视频',
       };
     }
 
-    if (file.size > this.MAX_FILE_SIZE) {
+    const isVideo = this.ALLOWED_VIDEO_TYPES.includes(mimeType);
+    const maxSize = isVideo ? this.MAX_VIDEO_SIZE : this.MAX_IMAGE_SIZE;
+
+    if (file.size > maxSize) {
       return {
         valid: false,
-        error: `文件大小不能超过 ${this.MAX_FILE_SIZE / 1024 / 1024}MB`,
+        error: `文件大小不能超过 ${maxSize / 1024 / 1024}MB`,
       };
     }
 
@@ -136,6 +155,70 @@ class CustomWallpaperManager {
     return new Blob([await file.arrayBuffer()], { type: file.type });
   }
 
+  // 判断文件是否为视频
+  private isVideoFile(file: File): boolean {
+    return this.ALLOWED_VIDEO_TYPES.includes(this.inferType(file));
+  }
+
+  // 获取视频尺寸和首帧缩略图
+  private async getVideoInfo(file: File): Promise<{ width: number; height: number; thumbnail: Blob }> {
+    return new Promise((resolve, reject) => {
+      const video = document.createElement('video');
+      const blobUrl = URL.createObjectURL(file);
+      video.preload = 'metadata';
+      video.muted = true;
+      video.playsInline = true;
+
+      const cleanup = () => {
+        URL.revokeObjectURL(blobUrl);
+        video.remove();
+      };
+
+      video.onerror = () => {
+        cleanup();
+        reject(new Error('视频加载失败'));
+      };
+
+      video.onloadedmetadata = () => {
+        // 跳到 0.1 秒避免黑帧
+        video.currentTime = Math.min(0.1, video.duration * 0.1);
+      };
+
+      video.onseeked = () => {
+        try {
+          const { videoWidth: width, videoHeight: height } = video;
+          const canvas = document.createElement('canvas');
+          const maxWidth = this.THUMBNAIL_SIZE;
+          const maxHeight = this.THUMBNAIL_SIZE;
+          const ratio = Math.min(maxWidth / width, maxHeight / height);
+          canvas.width = Math.floor(width * ratio);
+          canvas.height = Math.floor(height * ratio);
+
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+          canvas.toBlob(
+            (blob) => {
+              cleanup();
+              if (blob) {
+                resolve({ width, height, thumbnail: blob });
+              } else {
+                reject(new Error('视频缩略图生成失败'));
+              }
+            },
+            'image/jpeg',
+            0.7
+          );
+        } catch (error) {
+          cleanup();
+          reject(error);
+        }
+      };
+
+      video.src = blobUrl;
+    });
+  }
+
   // 获取壁纸列表（存储在 localStorage 中，因为是小型 JSON 数据）
   private async getWallpaperList(): Promise<WallpaperMetadata[]> {
     try {
@@ -166,23 +249,38 @@ class CustomWallpaperManager {
         return { success: false, error: validation.error };
       }
 
+      const isVideo = this.isVideoFile(file);
+
       logger.wallpaper.info('开始上传自定义壁纸', {
         name: file.name,
         size: `${(file.size / 1024 / 1024).toFixed(2)}MB`,
         type: file.type,
+        isVideo,
       });
 
       // 生成唯一ID
       const id = this.generateId();
 
-      // 获取图片尺寸
-      const { width, height } = await this.getImageDimensions(file);
+      let width: number;
+      let height: number;
+      let thumbnail: Blob;
 
-      // 保存原图（不压缩）
+      if (isVideo) {
+        // 视频：从首帧提取尺寸和缩略图
+        const videoInfo = await this.getVideoInfo(file);
+        width = videoInfo.width;
+        height = videoInfo.height;
+        thumbnail = videoInfo.thumbnail;
+      } else {
+        // 图片：原有逻辑
+        const dimensions = await this.getImageDimensions(file);
+        width = dimensions.width;
+        height = dimensions.height;
+        thumbnail = await this.generateThumbnail(await this.fileToBlob(file));
+      }
+
+      // 保存原文件（不压缩）
       const originalBlob = await this.fileToBlob(file);
-
-      // 生成缩略图（从原图生成）
-      const thumbnail = await this.generateThumbnail(originalBlob);
 
       // 创建元数据
       const metadata: WallpaperMetadata = {
@@ -192,9 +290,10 @@ class CustomWallpaperManager {
         uploadTime: Date.now(),
         width,
         height,
+        type: isVideo ? 'video' : 'image',
       };
 
-      // 保存原图到 IndexedDB
+      // 保存原文件到 IndexedDB
       await indexedDBCache.set(
         `${this.WALLPAPER_PREFIX}${id}`,
         originalBlob,
@@ -216,8 +315,9 @@ class CustomWallpaperManager {
       // 设置为当前壁纸
       await this.setCurrentWallpaper(id);
 
-      logger.wallpaper.info('自定义壁纸上传成功（保存原图）', {
+      logger.wallpaper.info('自定义壁纸上传成功', {
         id,
+        type: isVideo ? 'video' : 'image',
         originalSize: `${(originalBlob.size / 1024 / 1024).toFixed(2)}MB`,
         thumbnailSize: `${(thumbnail.size / 1024).toFixed(2)}KB`,
         dimensions: `${width}×${height}`,
@@ -619,10 +719,10 @@ class CustomWallpaperManager {
       }
 
       // 验证文件大小
-      if (blob.size > this.MAX_FILE_SIZE) {
+      if (blob.size > this.MAX_IMAGE_SIZE) {
         return {
           success: false,
-          error: `图片过大（${(blob.size / 1024 / 1024).toFixed(2)}MB），最大支持${this.MAX_FILE_SIZE / 1024 / 1024}MB`,
+          error: `图片过大（${(blob.size / 1024 / 1024).toFixed(2)}MB），最大支持${this.MAX_IMAGE_SIZE / 1024 / 1024}MB`,
         };
       }
 

@@ -70,6 +70,7 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
 
   const [bgImage, setBgImage] = useState('');
   const [bgOriginalUrl, setBgOriginalUrl] = useState<string | undefined>(); // 原始URL用于收藏检测
+  const [bgType, setBgType] = useState<'image' | 'video'>('image'); // 壁纸类型
   const [wallpaperLoaded, setWallpaperLoaded] = useState(false); // 壁纸加载状态
   const [showSettings, setShowSettings] = useState(false);
   const [showAddCardModal, setShowAddCardModal] = useState(false);
@@ -290,6 +291,18 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
       try {
         logger.debug('🖼️ 开始加载壁纸，分辨率:', wallpaperResolution);
 
+        // 自定义壁纸：检测是否为视频
+        let isVideo = false;
+        if (wallpaperResolution === 'custom') {
+          const currentId = await customWallpaperManager.getCurrentWallpaperId();
+          if (currentId) {
+            const allWallpapers = await customWallpaperManager.getAllWallpapers();
+            const current = allWallpapers.find(w => w.metadata.id === currentId);
+            isVideo = current?.metadata.type === 'video';
+          }
+        }
+        setBgType(isVideo ? 'video' : 'image');
+
         // 调用壁纸服务获取壁纸（日期检测和缓存逻辑在服务中统一处理）
         const result = await optimizedWallpaperService.getWallpaper(wallpaperResolution);
 
@@ -297,43 +310,49 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
           logger.debug(result.isFromCache ? '📦 使用缓存壁纸' : '🌐 加载新壁纸', {
             isToday: result.isToday,
             needsUpdate: result.needsUpdate,
+            type: isVideo ? 'video' : 'image',
           });
 
           // 重置加载状态，实现淡入效果
           setWallpaperLoaded(false);
 
-          // 预加载图片
-          const img = new Image();
-          img.onload = async () => {
+          if (isVideo) {
+            // 视频壁纸：直接设置，由 <video> 元素处理加载
             setBgImage(result.url);
             setBgOriginalUrl(result.originalUrl);
+            // 视频 loadeddata 事件中设置 wallpaperLoaded
+          } else {
+            // 图片壁纸：预加载
+            const img = new Image();
+            img.onload = async () => {
+              setBgImage(result.url);
+              setBgOriginalUrl(result.originalUrl);
 
-            // 智能遮罩模式：分析壁纸颜色（在图片加载完成后进行）
-            if (darkOverlayMode === 'smart') {
-              try {
-                // 自定义壁纸传递 ID，Bing 壁纸不传（使用日期作为缓存键）
-                const wallpaperId = wallpaperResolution === 'custom' ? 'current-custom' : undefined;
-                const needsOverlay = await shouldApplyOverlay(result.url, wallpaperId);
-                setSmartOverlayNeeded(needsOverlay);
-                logger.debug('🎨 智能遮罩检测结果:', needsOverlay ? '需要遮罩' : '不需要遮罩');
-              } catch (error) {
-                logger.warn('壁纸颜色分析失败:', error);
-                setSmartOverlayNeeded(false);
+              // 智能遮罩模式：分析壁纸颜色（在图片加载完成后进行）
+              if (darkOverlayMode === 'smart') {
+                try {
+                  const wallpaperId = wallpaperResolution === 'custom' ? 'current-custom' : undefined;
+                  const needsOverlay = await shouldApplyOverlay(result.url, wallpaperId);
+                  setSmartOverlayNeeded(needsOverlay);
+                  logger.debug('🎨 智能遮罩检测结果:', needsOverlay ? '需要遮罩' : '不需要遮罩');
+                } catch (error) {
+                  logger.warn('壁纸颜色分析失败:', error);
+                  setSmartOverlayNeeded(false);
+                }
               }
-            }
 
-            // 延迟一帧设置加载完成，确保transition生效
-            requestAnimationFrame(() => {
+              // 延迟一帧设置加载完成，确保transition生效
+              requestAnimationFrame(() => {
+                setWallpaperLoaded(true);
+              });
+            };
+            img.onerror = () => {
+              setBgImage(result.url);
+              setBgOriginalUrl(result.originalUrl);
               setWallpaperLoaded(true);
-            });
-          };
-          img.onerror = () => {
-            // 图片加载失败时也设置URL，让浏览器显示默认状态
-            setBgImage(result.url);
-            setBgOriginalUrl(result.originalUrl);
-            setWallpaperLoaded(true);
-          };
-          img.src = result.url;
+            };
+            img.src = result.url;
+          }
 
           // 如果缓存的不是今天的壁纸，记录警告
           if (!result.isToday && result.isFromCache) {
@@ -525,21 +544,47 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
       <EmailVerificationBanner />
 
       {/* 壁纸背景层 - 响应式优化 */}
-      <div
-        className="fixed top-0 left-0 w-full h-full -z-10"
-        style={{
-          backgroundImage: bgImage ? `url(${bgImage})` : undefined,
-          backgroundSize: 'cover',
-          backgroundPosition: isMobile ? 'center center' : 'center top',
-          backgroundRepeat: 'no-repeat',
-          opacity: wallpaperLoaded ? 1 : 0,
-          transform:
-            !isSettingsOpen && !isSearchFocused && !isAnnouncementOpen && parallaxEnabled && !isMobile && mousePosition
-              ? `translate(${-mousePosition.x * 0.02}px, ${-mousePosition.y * 0.02 + (!isOnline ? 60 : 0)}px) scale(1.05)`
-              : `translate(0px, ${!isOnline ? 60 : 0}px) scale(1)`,
-          transition: 'opacity 0.5s ease-out, transform 0.3s linear',
-        }}
-      />
+      {bgType === 'video' && bgImage ? (
+        <video
+          className="fixed top-0 left-0 w-full h-full object-cover -z-10"
+          src={bgImage}
+          autoPlay
+          loop
+          muted
+          playsInline
+          onLoadedData={() => {
+            requestAnimationFrame(() => setWallpaperLoaded(true));
+          }}
+          onError={() => {
+            setWallpaperLoaded(true);
+            setBgType('image'); // 降级为图片模式
+          }}
+          style={{
+            opacity: wallpaperLoaded ? 1 : 0,
+            transform:
+              !isSettingsOpen && !isSearchFocused && !isAnnouncementOpen && parallaxEnabled && !isMobile && mousePosition
+                ? `translate(${-mousePosition.x * 0.02}px, ${-mousePosition.y * 0.02 + (!isOnline ? 60 : 0)}px) scale(1.05)`
+                : `translate(0px, ${!isOnline ? 60 : 0}px) scale(1)`,
+            transition: 'opacity 0.5s ease-out, transform 0.3s linear',
+          }}
+        />
+      ) : (
+        <div
+          className="fixed top-0 left-0 w-full h-full -z-10"
+          style={{
+            backgroundImage: bgImage ? `url(${bgImage})` : undefined,
+            backgroundSize: 'cover',
+            backgroundPosition: isMobile ? 'center center' : 'center top',
+            backgroundRepeat: 'no-repeat',
+            opacity: wallpaperLoaded ? 1 : 0,
+            transform:
+              !isSettingsOpen && !isSearchFocused && !isAnnouncementOpen && parallaxEnabled && !isMobile && mousePosition
+                ? `translate(${-mousePosition.x * 0.02}px, ${-mousePosition.y * 0.02 + (!isOnline ? 60 : 0)}px) scale(1.05)`
+                : `translate(0px, ${!isOnline ? 60 : 0}px) scale(1)`,
+            transition: 'opacity 0.5s ease-out, transform 0.3s linear',
+          }}
+        />
+      )}
 
 
 
