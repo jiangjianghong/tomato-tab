@@ -1,6 +1,6 @@
 // 离线优先的Service Worker
 // ⚠️ 更新版本时，请同步更新 src/lib/swConfig.ts 中的 SW_VERSION
-const SW_VERSION = 'vaa0499c';
+const SW_VERSION = 'vdf0d304';
 const CACHE_NAME = `tomato-tab-${SW_VERSION}-offline`;
 const STATIC_CACHE_NAME = `static-${SW_VERSION}`;
 const DYNAMIC_CACHE_NAME = `dynamic-${SW_VERSION}`;

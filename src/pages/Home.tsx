@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { WebsiteCard } from '@/components/WebsiteCard';
 import { SearchBar } from '@/components/SearchBar';
 import { TimeDisplay } from '@/components/TimeDisplay';
@@ -72,6 +72,25 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
   const [bgOriginalUrl, setBgOriginalUrl] = useState<string | undefined>(); // 原始URL用于收藏检测
   const [bgType, setBgType] = useState<'image' | 'video'>('image'); // 壁纸类型
   const [wallpaperLoaded, setWallpaperLoaded] = useState(false); // 壁纸加载状态
+  const videoRef = useRef<HTMLVideoElement>(null); // 视频壁纸引用
+
+  // 视频壁纸可见性检测：不可见时暂停，节省资源
+  useEffect(() => {
+    if (bgType !== 'video') return;
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        video.play().catch(() => {});
+      } else {
+        video.pause();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, [bgType, bgImage]);
   const [showSettings, setShowSettings] = useState(false);
   const [showAddCardModal, setShowAddCardModal] = useState(false);
   const [isAnnouncementOpen, setIsAnnouncementOpen] = useState(false); // 公告弹窗状态
@@ -546,6 +565,7 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
       {/* 壁纸背景层 - 响应式优化 */}
       {bgType === 'video' && bgImage ? (
         <video
+          ref={videoRef}
           className="fixed top-0 left-0 w-full h-full object-cover -z-10"
           src={bgImage}
           autoPlay
