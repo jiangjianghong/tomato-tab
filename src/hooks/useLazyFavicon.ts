@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, RefObject } from 'react';
 import { faviconCache } from '@/lib/faviconCache';
 import { isDefaultIcon } from '@/lib/iconPath';
-import { releaseManagedBlobUrl } from '@/lib/memoryManager';
+import { releaseManagedBlobUrl, memoryManager } from '@/lib/memoryManager';
 import { processFaviconUrl } from '@/lib/faviconUtils';
 
 interface UseLazyFaviconOptions {
@@ -28,7 +28,8 @@ export function useLazyFavicon(
   const { rootMargin = '50px', threshold = 0.1 } = options;
 
   const [currentFaviconUrl, setCurrentFaviconUrl] = useState<string>(() => {
-    // 初始化时先检查缓存，优先使用 Blob URL
+    // 初始化仅做“探测”（acquire=false，不加引用），用于即时绘制；
+    // Blob url 的引用所有权由下方“认领”effect 在挂载时统一获取，与卸载配对。
     const cached = faviconCache.getCachedFavicon(originalUrl);
     if (cached && !isDefaultIcon(cached)) {
       return cached;
@@ -49,6 +50,21 @@ export function useLazyFavicon(
       currentBlobUrlRef.current = null;
     }
   };
+
+  // 认领（获取所有权）当前展示的 Blob URL 引用：
+  // 挂载时若展示的是缓存 Blob url 且尚未持有引用，则 acquire 一份（+1）记入 ref，
+  // 卸载时 release 一次 → 严格“+1 配 -1”，首次挂载与 StrictMode 重挂载对称。
+  useEffect(() => {
+    if (!currentBlobUrlRef.current && currentFaviconUrl.startsWith('blob:')) {
+      const owned = faviconCache.getCachedFavicon(originalUrl, true);
+      if (owned && owned.startsWith('blob:')) {
+        currentBlobUrlRef.current = owned;
+        if (owned !== currentFaviconUrl) {
+          setCurrentFaviconUrl(owned);
+        }
+      }
+    }
+  }, [originalUrl]);
 
   // IntersectionObserver effect
   useEffect(() => {
@@ -85,7 +101,13 @@ export function useLazyFavicon(
         const processedUrl = processFaviconUrl(cached, originalUrl, faviconUrl);
         cleanupCurrentBlobUrl();
         setCurrentFaviconUrl(processedUrl);
-        currentBlobUrlRef.current = processedUrl.startsWith('blob:') ? processedUrl : null;
+        if (processedUrl.startsWith('blob:')) {
+          // 为新展示的 Blob url 获取一份引用（+1），与卸载 release 配对
+          memoryManager.addRef(processedUrl);
+          currentBlobUrlRef.current = processedUrl;
+        } else {
+          currentBlobUrlRef.current = null;
+        }
         setError(false);
         setIsLoading(false);
       }
@@ -108,9 +130,13 @@ export function useLazyFavicon(
         if (currentFaviconUrl !== cachedProcessedUrl) {
           cleanupCurrentBlobUrl();
           setCurrentFaviconUrl(cachedProcessedUrl);
-          currentBlobUrlRef.current = cachedProcessedUrl.startsWith('blob:')
-            ? cachedProcessedUrl
-            : null;
+          if (cachedProcessedUrl.startsWith('blob:')) {
+            // 为新展示的 Blob url 获取一份引用（+1），与卸载 release 配对
+            memoryManager.addRef(cachedProcessedUrl);
+            currentBlobUrlRef.current = cachedProcessedUrl;
+          } else {
+            currentBlobUrlRef.current = null;
+          }
         }
         setError(false);
         setIsLoading(false);
@@ -134,13 +160,20 @@ export function useLazyFavicon(
       if (isDefaultIconUrl && !cached) {
         setIsLoading(true);
         faviconCache
-          .getFavicon(originalUrl, faviconUrl)
+          // acquire=true：本 hook 会持有返回的 Blob url 并在卸载时 release，
+          // 命中缓存时需 addRef 配对；新建路径 createManagedBlobUrl 自带 +1。
+          .getFavicon(originalUrl, faviconUrl, true)
           .then((url: string) => {
             if (url !== faviconUrl && !isDefaultIcon(url)) {
               const processedUrl = processFaviconUrl(url, originalUrl, faviconUrl);
               cleanupCurrentBlobUrl();
               setCurrentFaviconUrl(processedUrl);
               currentBlobUrlRef.current = processedUrl.startsWith('blob:') ? processedUrl : null;
+            } else {
+              // 未采用返回结果：若拿到的是带引用的 Blob url，需释放，避免泄漏
+              if (url && url.startsWith('blob:')) {
+                releaseManagedBlobUrl(url);
+              }
             }
             setError(false);
           })

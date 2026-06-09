@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react';
 import { workspaceManager } from '@/lib/notionClient';
 import { getNotionOAuthToken, hasNotionAuth } from '@/lib/notionOAuthHelper';
 import { supabase } from '@/lib/supabase';
@@ -241,7 +241,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // 配置Notion连接
-  const configureNotion = (apiKey: string, databaseId: string, corsProxy?: string) => {
+  const configureNotion = useCallback((apiKey: string, databaseId: string, corsProxy?: string) => {
     try {
       workspaceManager.configureNotion(apiKey, databaseId, corsProxy);
       setIsConfigured(true);
@@ -250,10 +250,10 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       setError(error instanceof Error ? error.message : '配置失败');
       setIsConfigured(false);
     }
-  };
+  }, []);
 
   // 配置 Notion 连接 (OAuth 模式)
-  const configureWithOAuth = async (databaseId: string, corsProxy?: string) => {
+  const configureWithOAuth = useCallback(async (databaseId: string, corsProxy?: string) => {
     try {
       const hasOAuth = await hasNotionAuth();
       if (!hasOAuth) {
@@ -267,15 +267,15 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       setIsConfigured(false);
       throw error;
     }
-  };
+  }, []);
 
   // 检查是否有 Notion OAuth 认证
-  const checkHasNotionOAuth = async (): Promise<boolean> => {
+  const checkHasNotionOAuth = useCallback(async (): Promise<boolean> => {
     return await hasNotionAuth();
-  };
+  }, []);
 
   // 搜索数据库
-  const searchDatabases = async () => {
+  const searchDatabases = useCallback(async () => {
     try {
       // 确保 OAuth 模式下 NotionClient 已初始化
       // 当用户通过 OAuth 登录后首次调用时，workspaceManager.notionClient 可能为空
@@ -289,10 +289,10 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       console.error('搜索数据库失败:', error);
       throw error;
     }
-  };
+  }, []);
 
   // 同步工作空间数据
-  const syncWorkspaceData = async () => {
+  const syncWorkspaceData = useCallback(async () => {
     // 检查配置状态，同时支持 API Key 和 OAuth 两种模式
     const config = workspaceManager.getConfig();
     const hasValidConfig = config && config.databaseId && (config.apiKey || config.mode === 'oauth');
@@ -342,10 +342,10 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   // 测试连接
-  const testConnection = async (): Promise<boolean> => {
+  const testConnection = useCallback(async (): Promise<boolean> => {
     // 直接检查 workspaceManager 的配置状态，而不是依赖 React 状态
     // 因为 React 状态更新是异步的，configureNotion 后立即调用 testConnection
     // 此时 isConfigured 状态可能还未更新
@@ -379,10 +379,10 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       }
       return false;
     }
-  };
+  }, []);
 
   // 清除配置（包括删除数据库中的 token）
-  const clearConfiguration = async () => {
+  const clearConfiguration = useCallback(async () => {
     // 删除数据库中的 Notion token
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -408,44 +408,44 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     setWorkspaceItems([]);
     setError(null);
     setLastSync(null);
-  };
+  }, []);
 
   // 刷新项目（重新同步）
-  const refreshItems = async () => {
+  const refreshItems = useCallback(async () => {
     await syncWorkspaceData();
-  };
+  }, [syncWorkspaceData]);
 
   // 筛选操作
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
     setSelectedCategory('all');
     setSearchQuery('');
     setFocusedItemIndex(-1);
-  };
+  }, []);
 
   // 键盘导航操作
-  const moveFocusUp = () => {
+  const moveFocusUp = useCallback(() => {
     setFocusedItemIndex(prev => Math.max(0, prev - 1));
-  };
+  }, []);
 
-  const moveFocusDown = () => {
+  const moveFocusDown = useCallback(() => {
     setFocusedItemIndex(prev => Math.min(filteredItems.length - 1, prev + 1));
-  };
+  }, [filteredItems]);
 
   // 工具方法
-  const openItem = (item: WorkspaceItem) => {
+  const openItem = useCallback((item: WorkspaceItem) => {
     window.open(item.url, '_blank', 'noopener,noreferrer');
-  };
+  }, []);
 
-  const copyItemUrl = async (item: WorkspaceItem) => {
+  const copyItemUrl = useCallback(async (item: WorkspaceItem) => {
     try {
       await navigator.clipboard.writeText(item.url);
       console.log('URL 已复制到剪贴板');
     } catch (error) {
       console.error('复制 URL 失败:', error);
     }
-  };
+  }, []);
 
-  const copyItemCredentials = async (item: WorkspaceItem, type: 'username' | 'password') => {
+  const copyItemCredentials = useCallback(async (item: WorkspaceItem, type: 'username' | 'password') => {
     try {
       const value = type === 'username' ? item.username : item.password;
       if (value) {
@@ -455,9 +455,12 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error(`复制${type === 'username' ? '账号' : '密码'}失败:`, error);
     }
-  };
+  }, []);
 
-  const value: WorkspaceContextType = {
+  // 获取当前配置
+  const getConfiguration = useCallback(() => workspaceManager.getConfig(), []);
+
+  const value: WorkspaceContextType = useMemo(() => ({
     // 基础状态
     isWorkspaceOpen,
     workspaceItems,
@@ -489,7 +492,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     testConnection,
     clearConfiguration,
     refreshItems,
-    getConfiguration: () => workspaceManager.getConfig(),
+    getConfiguration,
     hasNotionOAuth: checkHasNotionOAuth,
     searchDatabases,
 
@@ -510,7 +513,42 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     openItem,
     copyItemUrl,
     copyItemCredentials,
-  };
+  }), [
+    // 基础状态
+    isWorkspaceOpen,
+    workspaceItems,
+    isLoading,
+    error,
+    isConfigured,
+    lastSync,
+    // 视图状态
+    viewType,
+    // 筛选状态
+    selectedCategory,
+    searchQuery,
+    searchSuggestions,
+    // 派生状态
+    filteredItems,
+    categories,
+    // 键盘导航状态
+    focusedItemIndex,
+    // 方法（已 useCallback 稳定化）
+    syncWorkspaceData,
+    configureNotion,
+    configureWithOAuth,
+    testConnection,
+    clearConfiguration,
+    refreshItems,
+    getConfiguration,
+    checkHasNotionOAuth,
+    searchDatabases,
+    clearFilters,
+    moveFocusUp,
+    moveFocusDown,
+    openItem,
+    copyItemUrl,
+    copyItemCredentials,
+  ]);
 
   return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>;
 }

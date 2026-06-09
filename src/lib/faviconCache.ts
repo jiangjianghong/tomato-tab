@@ -4,7 +4,7 @@
  */
 
 import { indexedDBCache } from './indexedDBCache';
-import { createManagedBlobUrl, releaseManagedBlobUrl } from './memoryManager';
+import { createManagedBlobUrl, releaseManagedBlobUrl, memoryManager } from './memoryManager';
 
 interface FaviconMetadata {
   domain: string;
@@ -29,8 +29,9 @@ class FaviconCacheManager {
   constructor() {
     this.loadMetadata();
 
-    // 预加载所有有效缓存的 Blob URL
-    this.preloadBlobUrls();
+    // 不再首屏全量预建 Blob URL（改由 useLazyFavicon 按需创建）：
+    // 旧逻辑会遍历所有未过期域名一次性 createManagedBlobUrl，
+    // 造成首屏 I/O 压力与内存浪费；项目已有 IntersectionObserver 懒加载兜底。
   }
 
   /**
@@ -47,53 +48,6 @@ class FaviconCacheManager {
       console.warn('加载 favicon 元数据失败:', error);
       this.metadata = {};
     }
-  }
-
-  /**
-   * 预加载所有有效缓存的 Blob URL
-   */
-  private async preloadBlobUrls(): Promise<void> {
-    const now = Date.now();
-    const validDomains = Object.entries(this.metadata)
-      .filter(([, meta]) => now < meta.expiry)
-      .map(([domain]) => domain);
-
-    console.log(`🚀 开始预加载 ${validDomains.length} 个 favicon Blob URL`);
-
-    // 批量预加载，避免阻塞
-    const batchSize = 5;
-    for (let i = 0; i < validDomains.length; i += batchSize) {
-      const batch = validDomains.slice(i, i + batchSize);
-
-      await Promise.all(
-        batch.map(async (domain) => {
-          try {
-            // 如果已有 Blob URL 缓存，跳过
-            if (this.blobUrlCache.has(domain)) {
-              return;
-            }
-
-            const cacheKey = this.getFaviconCacheKey(domain);
-            const blob = await indexedDBCache.get(cacheKey);
-
-            if (blob) {
-              const blobUrl = await createManagedBlobUrl(blob, 'favicon');
-              this.blobUrlCache.set(domain, blobUrl);
-              console.log(`✅ 预加载 Blob URL: ${domain}`);
-            }
-          } catch (error) {
-            console.warn(`预加载 Blob URL 失败: ${domain}`, error);
-          }
-        })
-      );
-
-      // 小延迟避免阻塞主线程
-      if (i + batchSize < validDomains.length) {
-        await new Promise((resolve) => setTimeout(resolve, 10));
-      }
-    }
-
-    console.log(`🎉 预加载完成，共 ${this.blobUrlCache.size} 个 Blob URL`);
   }
 
   /**
@@ -270,7 +224,7 @@ class FaviconCacheManager {
   /**
    * 从缓存中获取 favicon 文件 - 增强错误处理
    */
-  private async getCachedFaviconFile(domain: string): Promise<string | null> {
+  private async getCachedFaviconFile(domain: string, acquire = false): Promise<string | null> {
     try {
       // 检查元数据
       const meta = this.metadata[domain];
@@ -288,10 +242,26 @@ class FaviconCacheManager {
         // 检查是否已有 Blob URL 缓存
         const existingBlobUrl = this.blobUrlCache.get(domain);
         if (existingBlobUrl && existingBlobUrl.startsWith('blob:')) {
-          return existingBlobUrl;
+          // 命中已有 Blob URL：仅当调用方会持有并 release（acquire=true，
+          // 即经 getFavicon 返给 hook）时才 addRef 配对；
+          // 批量预热等仅写缓存、不持有结果的调用方走 acquire=false，避免泄漏。
+          if (acquire) {
+            // addRef 失败说明该 url 已被 revoke（悬空），剔除后落到下方用手头
+            // 的 blob 重新创建，避免返回失效 url。
+            const alive = memoryManager.addRef(existingBlobUrl);
+            if (alive) {
+              return existingBlobUrl;
+            }
+            this.blobUrlCache.delete(domain);
+          } else {
+            return existingBlobUrl;
+          }
         }
 
         // 创建新的 Blob URL 并使用内存管理器
+        // （createManagedBlobUrl 自带 +1：该引用既作为 blobUrlCache 的常驻持有，
+        //  也充当首个调用方的引用——hook 持有后卸载 release 即配平；
+        //  批量预热不持有时，该 +1 留作缓存常驻，符合“缓存住”的预期。）
         try {
           const blobUrl = await createManagedBlobUrl(blob, 'favicon');
           this.blobUrlCache.set(domain, blobUrl);
@@ -360,15 +330,38 @@ class FaviconCacheManager {
 
   /**
    * 获取缓存的 favicon URL（同步检查，优先返回 Blob URL）
+   *
+   * @param acquire 是否“获取所有权”：
+   *   - false（默认，纯探测）：仅用于判断是否已缓存，不改动引用计数。
+   *     processFaviconUrl / preloadFavicons 等仅做布尔判断的调用方走这条，
+   *     否则会凭空 +1 且无人 release → 泄漏。
+   *   - true（获取所有权）：调用方（hook）会持有返回的 url 并在卸载时
+   *     releaseManagedBlobUrl 一次，故命中 Blob 缓存时此处 addRef(+1) 与之配对。
+   *     不在此处 +1 会导致失配——多个组件共享同一图标时，任一组件卸载即可能
+   *     把 refs 减到 0 → revoke → 其它组件图裂。
    */
-  getCachedFavicon(url: string): string | null {
+  getCachedFavicon(url: string, acquire = false): string | null {
     const domain = this.extractDomain(url);
 
     // 优先检查 Blob URL 缓存
     const blobUrl = this.blobUrlCache.get(domain);
     if (blobUrl) {
-      console.log(`🚀 使用 Blob URL 缓存: ${domain}`);
-      return blobUrl;
+      if (acquire) {
+        // acquire 时尝试 +1；addRef 返回 false 说明该 url 已被 memoryManager
+        // revoke/驱逐（例如 StrictMode 下唯一持有者卸载后引用归零被释放），
+        // 此时 blobUrlCache 中是“悬空”url，应剔除并回退到元数据让其重建，
+        // 避免把已失效的 Blob url 交给调用方（图裂）。
+        const alive = memoryManager.addRef(blobUrl);
+        if (!alive) {
+          this.blobUrlCache.delete(domain);
+        } else {
+          console.log(`🚀 使用 Blob URL 缓存: ${domain}`);
+          return blobUrl;
+        }
+      } else {
+        console.log(`🚀 使用 Blob URL 缓存: ${domain}`);
+        return blobUrl;
+      }
     }
 
     // 检查元数据缓存
@@ -383,12 +376,19 @@ class FaviconCacheManager {
 
   /**
    * 异步获取 favicon（文件缓存优先版）
+   *
+   * @param acquire 是否“获取所有权”：
+   *   - false（默认）：调用方不会对返回的 url 调用 release（如 SearchEngineIcon、
+   *     批量预热）。命中已存在的 Blob 缓存时不 addRef，保持引用计数中性，避免泄漏。
+   *   - true：调用方（useFavicon/useLazyFavicon）会持有返回 url 并在卸载时 release
+   *     一次，故命中 Blob 缓存时 addRef(+1) 与之配对。
+   *   默认取 false 是保守选择：只有明确会 release 的 hook 才显式传 true。
    */
-  async getFavicon(originalUrl: string, faviconUrl: string): Promise<string> {
+  async getFavicon(originalUrl: string, faviconUrl: string, acquire = false): Promise<string> {
     const domain = this.extractDomain(originalUrl);
 
     // 优先检查文件缓存
-    const cached = await this.getCachedFaviconFile(domain);
+    const cached = await this.getCachedFaviconFile(domain, acquire);
     if (cached) {
       return cached;
     }
@@ -470,7 +470,8 @@ class FaviconCacheManager {
       await Promise.allSettled(
         batch.map(async (website) => {
           try {
-            await this.getFavicon(website.url, website.favicon);
+            // 预热仅写缓存、不持有返回 url，acquire=false 避免多 addRef 泄漏
+            await this.getFavicon(website.url, website.favicon, false);
           } catch (error) {
             console.warn(`预加载图标失败: ${website.url}`, error);
           }
@@ -520,7 +521,8 @@ class FaviconCacheManager {
 
           console.log(`🔄 [${i + index + 1}/${websites.length}] 处理: ${domain}`);
 
-          const result = await this.getFavicon(site.url, site.favicon);
+          // 仅写缓存、不持有返回 url，acquire=false 避免多 addRef 泄漏
+          const result = await this.getFavicon(site.url, site.favicon, false);
           if (result && result !== '/icon/favicon.png') {
             successCount++;
             console.log(`✅ 文件缓存成功: ${domain}`);

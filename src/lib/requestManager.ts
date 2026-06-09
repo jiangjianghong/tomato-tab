@@ -43,11 +43,6 @@ class RequestManager {
   }
 
   constructor() {
-    // 定期处理队列
-    setInterval(() => {
-      this.processQueue();
-    }, 100);
-
     logger.debug('请求管理器已初始化', { maxConcurrent: this.maxConcurrent });
   }
 

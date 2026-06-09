@@ -432,6 +432,16 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
       : websites;
   }, [websites, autoSortEnabled]);
 
+  // 原始索引映射：id -> 在 websites 原数组中的索引，O(1) 查询，避免渲染时 findIndex 的 O(n²)
+  // 仅在自动排序启用时需要（关闭时直接用渲染下标 idx），但无条件构建以保持依赖简单
+  const originalIndexMap = useMemo(() => {
+    const map = new Map<string, number>();
+    websites.forEach((w, i) => {
+      map.set(w.id, i);
+    });
+    return map;
+  }, [websites]);
+
   const handleSaveCard = useCallback((updatedCard: {
     id: string;
     name: string;
@@ -450,6 +460,9 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
   const handleDelete = useCallback((id: string) => {
     setWebsites(websites.filter((card) => card.id !== id));
   }, [websites, setWebsites]);
+
+  // 打开新增卡片弹窗（稳定引用，避免内联函数击穿 WebsiteCard 的 memo）
+  const handleAddCard = useCallback(() => setShowAddCardModal(true), []);
 
   // 壁纸加载已在上方统一处理
 
@@ -716,9 +729,9 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
             transition={{ duration: 0.5 }}
           >
             {displayWebsites.map((website, idx) => {
-              // 当启用自动排序时，需要找到原始数组中的索引
+              // 当启用自动排序时，从预构建的 Map O(1) 取原始索引；否则直接用渲染下标
               const originalIndex = autoSortEnabled
-                ? websites.findIndex((w) => w.id === website.id)
+                ? originalIndexMap.get(website.id) ?? idx
                 : idx;
 
               return (
@@ -730,7 +743,7 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
                   onSave={handleSaveCard}
                   onDelete={handleDelete}
                   onCardSave={triggerSync}
-                  onAddCard={() => setShowAddCardModal(true)}
+                  onAddCard={handleAddCard}
                 />
               );
             })}

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { getUserProfile, saveUserProfile, updateUserProfile, UserProfile } from '@/lib/supabaseSync';
 import { useStorage } from '@/lib/storageManager';
@@ -46,17 +46,17 @@ export function UserProfileProvider({ children }: UserProfileProviderProps) {
   const avatarUrl = userProfile?.avatarUrl;
 
   // 更新本地状态和缓存
-  const updateUserProfileState = (profile: UserProfile | null) => {
+  const updateUserProfileState = useCallback((profile: UserProfile | null) => {
     setUserProfile(profile);
     if (profile) {
       setItem(USER_PROFILE_CACHE_KEY, profile);
     } else {
       removeItem(USER_PROFILE_CACHE_KEY);
     }
-  };
+  }, [setItem, removeItem]);
 
   // 更新显示名称
-  const updateDisplayName = async (name: string): Promise<boolean> => {
+  const updateDisplayName = useCallback(async (name: string): Promise<boolean> => {
     if (!currentUser || !currentUser.email_confirmed_at) return false;
 
     setLoading(true);
@@ -85,10 +85,10 @@ export function UserProfileProvider({ children }: UserProfileProviderProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser, userProfile, updateUserProfileState]);
 
   // 更新头像
-  const updateAvatar = async (url: string): Promise<boolean> => {
+  const updateAvatar = useCallback(async (url: string): Promise<boolean> => {
     if (!currentUser || !currentUser.email_confirmed_at) return false;
 
     setLoading(true);
@@ -117,7 +117,7 @@ export function UserProfileProvider({ children }: UserProfileProviderProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser, userProfile, updateUserProfileState]);
 
   // 当用户登录状态变化时，加载用户资料
   useEffect(() => {
@@ -163,14 +163,14 @@ export function UserProfileProvider({ children }: UserProfileProviderProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser, authLoading]);
 
-  const value: UserProfileContextType = {
+  const value: UserProfileContextType = useMemo(() => ({
     userProfile,
     displayName,
     avatarUrl,
     updateDisplayName,
     updateAvatar,
     loading,
-  };
+  }), [userProfile, displayName, avatarUrl, updateDisplayName, updateAvatar, loading]);
 
   return <UserProfileContext.Provider value={value}>{children}</UserProfileContext.Provider>;
 }
