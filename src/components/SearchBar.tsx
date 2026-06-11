@@ -321,7 +321,7 @@ function SearchBarComponent(props: SearchBarProps = {}) {
     Kimi: { name: 'Kimi', link: 'https://www.kimi.com/', icon: 'icon/kimi.svg' },
     Grok: { name: 'Grok', link: 'https://grok.x.ai/', icon: 'icon/grok.svg' },
     Claude: { name: 'Claude', link: 'https://claude.ai/', icon: 'icon/claude.svg' },
-    Mimo: { name: 'Mimo', link: 'https://mimo.ai/', icon: 'icon/mimo.svg' },
+    Mimo: { name: 'Mimo', link: 'https://aistudio.xiaomimimo.com/', icon: 'icon/mimo.svg' },
     Zhipu: { name: 'Zhipu', link: 'https://chatglm.cn/', icon: 'icon/zhipu.svg' },
     Qwen: { name: 'Qwen', link: 'https://tongyi.com/', icon: 'icon/qwen.svg' },
   };
