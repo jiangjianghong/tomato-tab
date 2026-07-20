@@ -207,16 +207,21 @@ self.addEventListener('fetch', (event) => {
           if (cachedResponse) {
             // 验证缓存响应是否有效
             if (cachedResponse.status === 200 && cachedResponse.headers.get('content-type')) {
-              // 有效缓存，后台更新
-              fetch(event.request).then((response) => {
-                if (response.status === 200) {
-                  caches.open(CACHE_NAME).then((cache) => {
-                    cache.put(event.request, response.clone());
-                  });
-                }
-              }).catch(() => {
-                // 忽略后台更新的网络错误
-              });
+              // 带 content hash 的构建产物内容永不变化，直接返回缓存，
+              // 跳过后台重新下载（否则每次打开标签页都会重复拉取全部 JS/CSS）
+              const isImmutableAsset = /\/assets\/.+-[A-Za-z0-9_-]{8,}\.[a-z0-9]+$/i.test(url);
+              if (!isImmutableAsset) {
+                // 非 hash 资源保留后台更新
+                fetch(event.request).then((response) => {
+                  if (response.status === 200) {
+                    caches.open(CACHE_NAME).then((cache) => {
+                      cache.put(event.request, response.clone());
+                    });
+                  }
+                }).catch(() => {
+                  // 忽略后台更新的网络错误
+                });
+              }
               return cachedResponse;
             }
             // 缓存无效，删除并走网络

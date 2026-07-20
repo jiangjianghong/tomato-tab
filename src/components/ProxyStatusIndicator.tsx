@@ -17,6 +17,7 @@ export function ProxyStatusIndicator({ proxyService, className = '' }: ProxyStat
   // Update status every 30 seconds
   useEffect(() => {
     const updateStatus = () => {
+      if (document.hidden) return; // 页面不可见时跳过，避免后台空转
       const proxyStatus = proxyService.getProxyStatus();
       setStatus(proxyStatus);
 

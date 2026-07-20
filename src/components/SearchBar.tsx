@@ -6,7 +6,7 @@ import { useWorkspace } from '@/contexts/WorkspaceContext';
 import * as validator from 'validator';
 import { TodoModal } from './TodoModal';
 import { processFaviconUrl } from '@/lib/faviconUtils';
-import { pinyin, match as pinyinMatch } from 'pinyin-pro';
+import { loadPinyin, getPinyinModule } from '@/lib/pinyinLoader';
 import { userStatsManager } from '@/hooks/useUserStats';
 import { createTomatoRain } from './effects/TomatoRain';
 import { useSearchEngine } from '@/contexts/SearchEngineContext';
@@ -38,6 +38,28 @@ interface SearchBarProps {
   onOpenSettings?: () => void;
 }
 
+// 模块级拼音索引缓存：以原文为 key，跨组件重挂载复用，避免重复计算
+const pinyinIndexCache = new Map<string, { full: string; first: string; original: string }>();
+
+function getPinyinIndex(text: string) {
+  const cached = pinyinIndexCache.get(text);
+  if (cached) return cached;
+
+  const py = getPinyinModule();
+  if (!py) {
+    // 拼音模块尚未加载完成：仅用原文兜底，不写缓存（加载后会重新计算完整索引）
+    return { full: '', first: '', original: text.toLowerCase() };
+  }
+
+  const result = {
+    full: py.pinyin(text, { toneType: 'none', type: 'array' }).join('').toLowerCase(),
+    first: py.pinyin(text, { pattern: 'first', type: 'array' }).join('').toLowerCase(),
+    original: text.toLowerCase(),
+  };
+  pinyinIndexCache.set(text, result);
+  return result;
+}
+
 function SearchBarComponent(props: SearchBarProps = {}) {
   const { websites = [], onOpenSettings } = props;
   const inputRef = useRef<HTMLInputElement>(null);
@@ -58,6 +80,55 @@ function SearchBarComponent(props: SearchBarProps = {}) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
   const searchBtnRef = useRef<HTMLButtonElement>(null);
+
+  // 拼音模块动态加载状态（页面空闲时预取，不阻塞首屏）
+  const [pinyinReady, setPinyinReady] = useState(() => getPinyinModule() !== null);
+
+  useEffect(() => {
+    if (pinyinReady) return;
+    let cancelled = false;
+
+    const load = () => {
+      loadPinyin().then(() => {
+        if (!cancelled) setPinyinReady(true);
+      }).catch(() => {
+        // 加载失败时保持普通字符串匹配兜底
+      });
+    };
+
+    if ('requestIdleCallback' in window) {
+      const id = (window as any).requestIdleCallback(load, { timeout: 2000 });
+      return () => {
+        cancelled = true;
+        (window as any).cancelIdleCallback?.(id);
+      };
+    }
+    const timer = setTimeout(load, 1000);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [pinyinReady]);
+
+  // 拼音就绪后在空闲时预热网站索引，消除首次输入时的计算尖峰
+  useEffect(() => {
+    if (!pinyinReady || websites.length === 0) return;
+
+    const warmUp = () => {
+      websites.forEach((site) => {
+        getPinyinIndex(site.name);
+        site.tags?.forEach((tag) => getPinyinIndex(tag));
+        if (site.note) getPinyinIndex(site.note);
+      });
+    };
+
+    if ('requestIdleCallback' in window) {
+      const id = (window as any).requestIdleCallback(warmUp, { timeout: 5000 });
+      return () => (window as any).cancelIdleCallback?.(id);
+    }
+    const timer = setTimeout(warmUp, 2000);
+    return () => clearTimeout(timer);
+  }, [pinyinReady, websites]);
   const [hoveredEmojiIdx, setHoveredEmojiIdx] = useState<number | null>(null);
   const [showEngineTooltip, setShowEngineTooltip] = useState(false);
   const searchBarRef = useRef<HTMLFormElement>(null);
@@ -477,29 +548,10 @@ function SearchBarComponent(props: SearchBarProps = {}) {
     return [...new Set(suggestions)];
   }, []);
 
-  // 拼音索引缓存 - 为每个网站生成拼音索引
-  const pinyinIndexCache = useMemo(() => {
-    const cache = new Map<string, { full: string; first: string; original: string }>();
-
-    const getPinyinIndex = (text: string) => {
-      if (cache.has(text)) return cache.get(text)!;
-
-      const result = {
-        full: pinyin(text, { toneType: 'none', type: 'array' }).join('').toLowerCase(),
-        first: pinyin(text, { pattern: 'first', type: 'array' }).join('').toLowerCase(),
-        original: text.toLowerCase(),
-      };
-      cache.set(text, result);
-      return result;
-    };
-
-    return { getPinyinIndex, cache };
-  }, []);
-
+  // 拼音索引缓存 - 为每个网站生成拼音索引（模块级 Map，跨组件重挂载复用）
   // 拼音匹配函数
   const matchWithPinyin = useCallback((query: string, text: string): { matched: boolean; score: number; matchType: string } => {
     const queryLower = query.toLowerCase();
-    const { getPinyinIndex } = pinyinIndexCache;
     const index = getPinyinIndex(text);
 
     // 1. 原文完全匹配 (最高分)
@@ -543,13 +595,16 @@ function SearchBarComponent(props: SearchBarProps = {}) {
     }
 
     // 9. 智能拼音匹配 (支持部分匹配，如: baid -> 百度)
-    const smartMatch = pinyinMatch(text, query, { continuous: true });
-    if (smartMatch !== null) {
-      return { matched: true, score: 85, matchType: '智能拼音' };
+    const py = getPinyinModule();
+    if (py) {
+      const smartMatch = py.match(text, query, { continuous: true });
+      if (smartMatch !== null) {
+        return { matched: true, score: 85, matchType: '智能拼音' };
+      }
     }
 
     return { matched: false, score: 0, matchType: '' };
-  }, [pinyinIndexCache]);
+  }, [pinyinReady]); // eslint-disable-line react-hooks/exhaustive-deps -- pinyinReady 变化时刷新匹配能力
 
   const generateSuggestions = useCallback(async (query: string): Promise<any[]> => {
     if (!query.trim()) return [];

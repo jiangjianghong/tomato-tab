@@ -589,29 +589,67 @@ export function AuthProvider({ children }: AuthProviderProps) {
     checkEmailConfirmation();
   }, []);
 
-  // Supabase连接状态监听
+  // Supabase连接状态监听（事件驱动：启动时检测一次，之后仅在断连时低频重试，
+  // 网络恢复/页面重新可见时再探测，避免常驻标签页 24 小时不间断轮询）
   useEffect(() => {
+    let disposed = false;
+    let retryInterval: ReturnType<typeof setInterval> | null = null;
+
+    const stopRetry = () => {
+      if (retryInterval) {
+        clearInterval(retryInterval);
+        retryInterval = null;
+      }
+    };
+
     const checkConnection = async () => {
+      if (disposed || document.hidden) return;
       try {
         const { error } = await supabase.from('user_profiles').select('id').limit(1);
-        setIsSupabaseConnected(!error);
+        if (disposed) return;
+        const connected = !error;
+        setIsSupabaseConnected(connected);
 
         if (error && error.message?.includes('网络')) {
           setError('Supabase服务暂时不可用，部分功能可能受限');
-        } else if (error?.message?.includes('Supabase') && isSupabaseConnected) {
-          setError(null);
+        } else if (connected) {
+          setError((prev) => (prev?.includes('Supabase') ? null : prev));
         }
-      } catch (error) {
+
+        if (connected) {
+          stopRetry();
+        } else if (!retryInterval) {
+          retryInterval = setInterval(checkConnection, 30000);
+        }
+      } catch {
+        if (disposed) return;
         setIsSupabaseConnected(false);
         setError('Supabase服务暂时不可用，部分功能可能受限');
+        if (!retryInterval) {
+          retryInterval = setInterval(checkConnection, 30000);
+        }
+      }
+    };
+
+    const handleOnline = () => checkConnection();
+    const handleVisibility = () => {
+      // 页面重新可见且处于断连重试状态时立即探测一次
+      if (!document.hidden && retryInterval) {
+        checkConnection();
       }
     };
 
     checkConnection();
-    const interval = setInterval(checkConnection, 30000); // 每30秒检查一次
+    window.addEventListener('online', handleOnline);
+    document.addEventListener('visibilitychange', handleVisibility);
 
-    return () => clearInterval(interval);
-  }, [isSupabaseConnected]);
+    return () => {
+      disposed = true;
+      stopRetry();
+      window.removeEventListener('online', handleOnline);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, []);
 
   // 网络状态监听
   useEffect(() => {

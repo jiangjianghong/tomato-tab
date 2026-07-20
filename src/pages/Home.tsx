@@ -94,7 +94,7 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
   const [showSettings, setShowSettings] = useState(false);
   const [showAddCardModal, setShowAddCardModal] = useState(false);
   const [isAnnouncementOpen, setIsAnnouncementOpen] = useState(false); // 公告弹窗状态
-  const [mousePosition, setMousePosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const bgDivRef = useRef<HTMLDivElement>(null); // 图片壁纸引用（视差直写 transform 用）
   const [isFavoriting, setIsFavoriting] = useState(false);
   const [isFavorited, setIsFavorited] = useState(false);
   const [isAlreadyFavorited, setIsAlreadyFavorited] = useState(false);
@@ -501,21 +501,27 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
     preloadComponents();
   }, []);
 
-  // 优化的鼠标移动处理器 - 使用 RAF 节流
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    setMousePosition({ x: e.clientX, y: e.clientY });
-  }, []);
+  // 优化的鼠标移动处理器 - RAF 节流 + ref 直写 transform，绕过 React 渲染
+  const parallaxActive =
+    parallaxEnabled && !isSettingsOpen && !isSearchFocused && !isAnnouncementOpen && !isMobile;
 
-  const throttledMouseMove = useRAFThrottledMouseMove(
-    handleMouseMove,
-    parallaxEnabled && !isSettingsOpen && !isSearchFocused && !isAnnouncementOpen
-  );
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    const el = videoRef.current ?? bgDivRef.current;
+    if (!el) return;
+    const offsetY = !isOnline ? 60 : 0;
+    el.style.transform = `translate(${-e.clientX * 0.02}px, ${-e.clientY * 0.02 + offsetY}px) scale(1.05)`;
+  }, [isOnline]);
+
+  const throttledMouseMove = useRAFThrottledMouseMove(handleMouseMove, parallaxActive);
 
   // 监听鼠标移动 - 使用 RAF 节流优化性能
   useEffect(() => {
-    // 如果视差被禁用或设置页面打开或搜索框聚焦或公告弹窗打开，不添加鼠标监听器
-    if (!parallaxEnabled || isSettingsOpen || isSearchFocused || isAnnouncementOpen) {
-      setMousePosition({ x: 0, y: 0 });
+    if (!parallaxActive) {
+      // 视差关闭时复位到基准位置
+      const el = videoRef.current ?? bgDivRef.current;
+      if (el) {
+        el.style.transform = `translate(0px, ${!isOnline ? 60 : 0}px) scale(1)`;
+      }
       return;
     }
 
@@ -523,7 +529,7 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
     return () => {
       window.removeEventListener('mousemove', throttledMouseMove);
     };
-  }, [parallaxEnabled, isSettingsOpen, isSearchFocused, isAnnouncementOpen, throttledMouseMove]);
+  }, [parallaxActive, isOnline, throttledMouseMove]);
 
   // 预加载 favicon（已移除，使用下面的 IndexedDB 批量缓存代替）
 
@@ -590,19 +596,18 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
           }}
           onError={() => {
             setWallpaperLoaded(true);
+            setBgImage(''); // 清空视频 URL，避免降级后被当作图片重复请求
             setBgType('image'); // 降级为图片模式
           }}
           style={{
             opacity: wallpaperLoaded ? 1 : 0,
-            transform:
-              !isSettingsOpen && !isSearchFocused && !isAnnouncementOpen && parallaxEnabled && !isMobile && mousePosition
-                ? `translate(${-mousePosition.x * 0.02}px, ${-mousePosition.y * 0.02 + (!isOnline ? 60 : 0)}px) scale(1.05)`
-                : `translate(0px, ${!isOnline ? 60 : 0}px) scale(1)`,
+            transform: `translate(0px, ${!isOnline ? 60 : 0}px) scale(1)`,
             transition: 'opacity 0.5s ease-out, transform 0.3s linear',
           }}
         />
       ) : (
         <div
+          ref={bgDivRef}
           className="fixed top-0 left-0 w-full h-full -z-10"
           style={{
             backgroundImage: bgImage ? `url(${bgImage})` : undefined,
@@ -610,10 +615,7 @@ export default function Home({ websites, setWebsites, dataInitialized = true }: 
             backgroundPosition: isMobile ? 'center center' : 'center top',
             backgroundRepeat: 'no-repeat',
             opacity: wallpaperLoaded ? 1 : 0,
-            transform:
-              !isSettingsOpen && !isSearchFocused && !isAnnouncementOpen && parallaxEnabled && !isMobile && mousePosition
-                ? `translate(${-mousePosition.x * 0.02}px, ${-mousePosition.y * 0.02 + (!isOnline ? 60 : 0)}px) scale(1.05)`
-                : `translate(0px, ${!isOnline ? 60 : 0}px) scale(1)`,
+            transform: `translate(0px, ${!isOnline ? 60 : 0}px) scale(1)`,
             transition: 'opacity 0.5s ease-out, transform 0.3s linear',
           }}
         />

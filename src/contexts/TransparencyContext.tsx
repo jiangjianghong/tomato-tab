@@ -310,21 +310,6 @@ export function TransparencyProvider({ children }: { children: ReactNode }) {
     return saved || '06:00'; // 默认早上6点
   });
 
-  // 用于触发定时模式更新的时间状态
-  const [currentMinute, setCurrentMinute] = useState(() => {
-    const now = new Date();
-    return now.getHours() * 60 + now.getMinutes();
-  });
-
-  // 每分钟更新一次，用于定时模式
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const now = new Date();
-      setCurrentMinute(now.getHours() * 60 + now.getMinutes());
-    }, 60000); // 每分钟检查一次
-    return () => clearInterval(interval);
-  }, []);
-
   // 判断当前时间是否在定时范围内
   const isInScheduledTime = (start: string, end: string): boolean => {
     const now = new Date();
@@ -343,6 +328,28 @@ export function TransparencyProvider({ children }: { children: ReactNode }) {
     // 同一天内
     return currentMinutes >= startMinutes && currentMinutes < endMinutes;
   };
+
+  // 定时模式当前是否处于夜间时段
+  const [scheduledActive, setScheduledActive] = useState(() =>
+    isInScheduledTime(
+      localStorage.getItem('darkModeScheduleStart') || '22:00',
+      localStorage.getItem('darkModeScheduleEnd') || '06:00'
+    )
+  );
+
+  // 仅在定时模式下每分钟检查一次，且只有结果真正翻转时才 setState（避免无谓的全树重渲染）
+  useEffect(() => {
+    if (darkModePreference !== 'scheduled') return;
+
+    const check = () => {
+      const active = isInScheduledTime(darkModeScheduleStart, darkModeScheduleEnd);
+      setScheduledActive((prev) => (prev === active ? prev : active));
+    };
+
+    check(); // 切换到定时模式或修改时间段时立即生效
+    const interval = setInterval(check, 60000);
+    return () => clearInterval(interval);
+  }, [darkModePreference, darkModeScheduleStart, darkModeScheduleEnd]);
 
   // 监听系统主题变化
   const [systemPrefersDark, setSystemPrefersDark] = useState(() =>
@@ -364,12 +371,12 @@ export function TransparencyProvider({ children }: { children: ReactNode }) {
       case 'off':
         return false;
       case 'scheduled':
-        return isInScheduledTime(darkModeScheduleStart, darkModeScheduleEnd);
+        return scheduledActive;
       case 'system':
       default:
         return systemPrefersDark;
     }
-  }, [darkModePreference, darkModeScheduleStart, darkModeScheduleEnd, systemPrefersDark, currentMinute]);
+  }, [darkModePreference, scheduledActive, systemPrefersDark]);
 
   // 初始化autoSortEnabled从localStorage
   useEffect(() => {

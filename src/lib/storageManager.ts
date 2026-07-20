@@ -217,13 +217,14 @@ export class StorageManager {
 export const storageManager = StorageManager.getInstance();
 
 // 创建便捷的钩子函数
-export function useStorage() {
-  const setStorageItem = (key: string, value: any, isEssential: boolean = false) => {
+// 模块级单例：返回值引用稳定，可安全放进 useEffect/useCallback 依赖数组，
+// 避免每次渲染生成新对象导致依赖它的 effect 反复执行（如全量书签序列化写 localStorage）
+const storageApi = {
+  setItem: (key: string, value: any, isEssential: boolean = false) => {
     const stringValue = typeof value === 'string' ? value : JSON.stringify(value);
     return storageManager.setItem(key, stringValue, isEssential);
-  };
-
-  const getStorageItem = <T>(key: string, isEssential: boolean = false): T | null => {
+  },
+  getItem: <T>(key: string, isEssential: boolean = false): T | null => {
     const value = storageManager.getItem(key, isEssential);
     if (!value) return null;
 
@@ -232,20 +233,17 @@ export function useStorage() {
     } catch {
       return value as T;
     }
-  };
-
-  const removeStorageItem = (key: string, isEssential: boolean = false) => {
+  },
+  removeItem: (key: string, isEssential: boolean = false) => {
     return storageManager.removeItem(key, isEssential);
-  };
+  },
+  hasConsent: () => storageManager.hasConsent(),
+  getConsentStatus: () => storageManager.getConsentStatus(),
+  getStats: () => storageManager.getStorageStats(),
+  clearNonEssential: () => storageManager.clearNonEssentialData(),
+  exportData: () => storageManager.exportData(),
+};
 
-  return {
-    setItem: setStorageItem,
-    getItem: getStorageItem,
-    removeItem: removeStorageItem,
-    hasConsent: () => storageManager.hasConsent(),
-    getConsentStatus: () => storageManager.getConsentStatus(),
-    getStats: () => storageManager.getStorageStats(),
-    clearNonEssential: () => storageManager.clearNonEssentialData(),
-    exportData: () => storageManager.exportData(),
-  };
+export function useStorage() {
+  return storageApi;
 }
